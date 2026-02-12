@@ -18,6 +18,8 @@
     "seed-db": "tsx scripts/seedDatabase.ts"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "@hookform/resolvers": "^3.9.0",
     "@iconify/react": "^6.0.2",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -66,7 +68,8 @@
     "react-hook-form": "^7.53.0",
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.3",
-    "react-router-dom": "^6.26.2",
+    "react-router-dom": "^6.30.3",
+    "react-signature-canvas": "^1.1.0-alpha.2",
     "recharts": "^2.12.7",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",

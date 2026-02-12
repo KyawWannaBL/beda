@@ -1,0 +1,10 @@
+ext {
+    minSdkVersion = 22
+    compileSdkVersion = 33
+    targetSdkVersion = 33
+    androidxActivityVersion = '1.7.0'
+    androidxAppCompatVersion = '1.6.1'
+    // Change this to 1.8.22
+    kotlinVersion = '1.8.22' 
+    // ...
+}
