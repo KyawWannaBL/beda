@@ -1,10 +1,14 @@
 ext {
     minSdkVersion = 22
-    compileSdkVersion = 33
-    targetSdkVersion = 33
-    androidxActivityVersion = '1.7.0'
+    compileSdkVersion = 35
+    targetSdkVersion = 35
     androidxAppCompatVersion = '1.6.1'
-    // Change this to 1.8.22
-    kotlinVersion = '1.8.22' 
-    // ...
+    androidxCoordinatorLayoutVersion = '1.2.0'
+    coreSplashScreenVersion = '1.0.0'
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.1.5'
+    androidxEspressoCoreVersion = '3.5.1'
+    // Add these if you use Google services
+    playServicesLocationVersion = '21.0.1'
+    firebaseMessagingVersion = '23.4.0'
 }

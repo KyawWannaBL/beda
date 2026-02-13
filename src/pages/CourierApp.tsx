@@ -1,156 +1,68 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Truck, Package, MapPin, Clock, QrCode, Camera } from 'lucide-react';
+import { MapPin, Navigation, QrCode, Phone, ChevronRight, Package } from 'lucide-react';
 
 export default function CourierApp() {
-  const mockDeliveries = [
-    {
-      awb: 'DEL123456789',
-      customerName: 'John Smith',
-      address: '123 Main Street, Apartment 4B, Downtown',
-      phone: '+1-555-0123',
-      codAmount: 250,
-      priority: 'high',
-      timeSlot: '10:00 AM - 12:00 PM'
-    },
-    {
-      awb: 'DEL987654321',
-      customerName: 'Sarah Johnson',
-      address: '456 Oak Avenue, Suite 200, Business District',
-      phone: '+1-555-0456',
-      codAmount: 0,
-      priority: 'normal',
-      timeSlot: '2:00 PM - 4:00 PM'
-    },
-    {
-      awb: 'DEL456789123',
-      customerName: 'Mike Wilson',
-      address: '789 Pine Road, House #15, Suburbs',
-      phone: '+1-555-0789',
-      codAmount: 150,
-      priority: 'normal',
-      timeSlot: '4:00 PM - 6:00 PM'
-    }
-  ];
-
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
-          <Truck className="h-6 w-6" />
-          Courier Delivery App
-        </h1>
-        <p className="text-muted-foreground">Today's delivery assignments</p>
-      </div>
+    <div className="min-h-screen bg-[#0B0C10] text-zinc-100 p-6 font-sans">
+      <header className="mb-10 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-serif italic text-white tracking-tight">Active Dispatches</h1>
+          <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] mt-1">Premium Logistics Unit</p>
+        </div>
+        <div className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-md">
+          <span className="text-[#D4AF37] font-bold text-sm tracking-tighter">BE</span>
+        </div>
+      </header>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Package className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-            <p className="text-2xl font-bold">12</p>
-            <p className="text-sm text-muted-foreground">Total Deliveries</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Clock className="h-8 w-8 mx-auto mb-2 text-green-600" />
-            <p className="text-2xl font-bold">8</p>
-            <p className="text-sm text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <MapPin className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-            <p className="text-2xl font-bold">3</p>
-            <p className="text-sm text-muted-foreground">Pending</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Truck className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-            <p className="text-2xl font-bold">1</p>
-            <p className="text-sm text-muted-foreground">Exceptions</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Delivery List */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Pending Deliveries</h2>
-        {mockDeliveries.map((delivery, index) => (
-          <Card key={delivery.awb}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{delivery.customerName}</CardTitle>
-                  <p className="text-sm text-muted-foreground font-mono">{delivery.awb}</p>
+      <div className="space-y-6">
+        {[1, 2].map((i) => (
+          <div key={i} className="relative group">
+            {/* The "Glow" behind luxury cards */}
+            <div className="absolute inset-0 bg-amber-500/5 blur-2xl rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            
+            <Card className="relative bg-white/5 border-white/10 overflow-hidden backdrop-blur-sm rounded-[2rem]">
+              <CardContent className="p-0">
+                <div className="p-8 flex justify-between items-start">
+                  <div className="space-y-4">
+                    <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20 text-[10px] tracking-widest uppercase px-3 py-1">
+                      Priority Elite
+                    </Badge>
+                    <div>
+                      <h3 className="text-xl font-medium text-white mb-1">Platinum Residence 4B</h3>
+                      <p className="text-zinc-400 text-sm flex items-center gap-2">
+                        <MapPin className="h-3 w-3 text-[#D4AF37]" /> Downtown Central District
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-zinc-500 text-[10px] uppercase tracking-widest">ETA</p>
+                    <p className="text-white font-light text-2xl tracking-tighter">12:45</p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Badge variant={delivery.priority === 'high' ? 'destructive' : 'secondary'}>
-                    {delivery.priority}
-                  </Badge>
-                  {delivery.codAmount > 0 && (
-                    <Badge variant="outline">COD ₹{delivery.codAmount}</Badge>
-                  )}
+                
+                <div className="grid grid-cols-2 border-t border-white/10">
+                  <button className="py-5 flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-widest border-r border-white/10 hover:bg-white/5 transition-all">
+                    <Navigation className="h-4 w-4 text-[#D4AF37]" /> Route
+                  </button>
+                  <button className="py-5 flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-widest bg-white/[0.02] hover:bg-[#D4AF37] hover:text-black transition-all duration-500">
+                    <QrCode className="h-4 w-4" /> Scan AWB
+                  </button>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 mt-1 text-muted-foreground" />
-                  <p className="text-sm">{delivery.address}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm">{delivery.timeSlot}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1">
-                  <QrCode className="h-4 w-4 mr-2" />
-                  Scan QR
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Capture POD
-                </Button>
-                <Button size="sm" variant="outline">
-                  Call
-                </Button>
-                <Button size="sm" variant="outline">
-                  Navigate
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="h-16">
-            <div className="text-center">
-              <QrCode className="h-6 w-6 mx-auto mb-1" />
-              <p className="text-sm">Bulk Scan</p>
-            </div>
-          </Button>
-          <Button variant="outline" className="h-16">
-            <div className="text-center">
-              <Package className="h-6 w-6 mx-auto mb-1" />
-              <p className="text-sm">Report Exception</p>
-            </div>
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Floating Action Button for Luxury Mobile Feel */}
+      <div className="fixed bottom-8 right-8">
+        <button className="h-16 w-16 bg-[#D4AF37] rounded-full shadow-[0_20px_40px_rgba(212,175,55,0.3)] flex items-center justify-center text-black active:scale-90 transition-transform">
+          <Package className="h-6 w-6" />
+        </button>
+      </div>
     </div>
   );
 }

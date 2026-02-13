@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-100 text-gray-800;
+@layer base {
+  body {
+    @apply bg-luxury-obsidian text-zinc-100 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3 {
+    @apply font-serif tracking-tight;
+  }
 }
+
+@layer components {
+  .luxury-glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-luxury;
+  }
+
+  .luxury-input {
+    @apply bg-white/5 border-zinc-800 focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/20 transition-all duration-300;
+  }
+
+  .luxury-button {
+    @apply bg-luxury-gold text-luxury-obsidian font-bold tracking-widest uppercase text-[10px] 
+           hover:bg-yellow-500 hover:scale-[1.02] active:scale-95 transition-all duration-300
+           shadow-[0_10px_20px_rgba(212,175,55,0.2)];
+  }
+}
+
+/* Custom Scrollbar for Luxury Aesthetics */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0B0C10; }
+::-webkit-scrollbar-thumb { 
+  background: #2D2D2D; 
+  border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
