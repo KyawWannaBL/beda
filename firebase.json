@@ -1,10 +1,4 @@
 {
-  "firestore": {
-    "database": "fdcdb",
-    "location": "asia-southeast1",
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -22,9 +16,6 @@
   "emulators": {
     "auth": {
       "port": 9099
-    },
-    "firestore": {
-      "port": 8080
     },
     "storage": {
       "port": 9199

@@ -8,11 +8,13 @@ android {
         applicationId "com.britiumexpress.beda"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        
+        // INCREMENTED VALUES:
+        versionCode 2           // Changed from 1 to 2
+        versionName "1.1"       // Changed from "1.0" to "1.1" (or "2.0")
+        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-            // Modern web apps အတွက် လိုအပ်သော assets များ မပျောက်ပျက်စေရန် config လုပ်ထားခြင်း
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }

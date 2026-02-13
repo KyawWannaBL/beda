@@ -1,86 +1,73 @@
-// Simplified QR Operations page
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { QrCode, Scan, Package, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { QrCode, Copy, ShieldCheck } from 'lucide-react';
 
 export default function QROperations() {
+  const [groupShipmentId, setGroupShipmentId] = useState('');
+  const [dateISO, setDateISO] = useState(() => new Date().toISOString().slice(0, 10));
+
+  const payload = useMemo(() => {
+    return JSON.stringify({
+      groupShipmentId: groupShipmentId.trim(),
+      date: dateISO,
+      nonce: Math.random().toString(36).slice(2, 10),
+    });
+  }, [groupShipmentId, dateISO]);
+
+  const encoded = useMemo(() => {
+    try {
+      return btoa(unescape(encodeURIComponent(payload)));
+    } catch {
+      return payload;
+    }
+  }, [payload]);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(encoded);
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">QR Operations</h1>
-        <p className="text-muted-foreground">Scan and manage QR codes for shipments</p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="card-modern">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              Generate QR Code
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Generate QR codes for new shipments
-            </p>
-            <Button className="w-full">
-              <QrCode className="mr-2 h-4 w-4" />
-              Generate QR Code
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="card-modern">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Scan className="h-5 w-5" />
-              Scan QR Code
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Scan existing QR codes to update shipment status
-            </p>
-            <Button className="w-full" variant="outline">
-              <Scan className="mr-2 h-4 w-4" />
-              Start Scanning
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="p-6 space-y-6">
+      <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+        <QrCode className="h-7 w-7" /> QR Operations
+      </h1>
 
       <Card className="card-modern">
         <CardHeader>
-          <CardTitle>Recent QR Activities</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" /> Generate QR Payload
+          </CardTitle>
+          <CardDescription>Encoded token for printing + anti-fraud scanning.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>GroupShipmentId</Label>
+            <Input value={groupShipmentId} onChange={(e) => setGroupShipmentId(e.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Date</Label>
+            <Input type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} />
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-success/10">
-                  <CheckCircle className="h-4 w-4 text-success" />
-                </div>
-                <div>
-                  <p className="font-medium">EDS001 - Delivered</p>
-                  <p className="text-sm text-muted-foreground">Scanned 5 minutes ago</p>
-                </div>
-              </div>
-              <Badge variant="default">Completed</Badge>
+              <Label>Encoded Token</Label>
+              <Badge variant="secondary">Base64</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-warning/10">
-                  <Package className="h-4 w-4 text-warning" />
-                </div>
-                <div>
-                  <p className="font-medium">EDS002 - In Transit</p>
-                  <p className="text-sm text-muted-foreground">Scanned 15 minutes ago</p>
-                </div>
-              </div>
-              <Badge variant="secondary">In Progress</Badge>
+
+            <div className="rounded-xl border bg-slate-50 p-3 font-mono text-xs break-all">
+              {groupShipmentId ? encoded : 'Enter GroupShipmentId to generate token…'}
             </div>
+
+            <Button className="h-12" onClick={copy} disabled={!groupShipmentId}>
+              <Copy className="h-4 w-4 mr-2" /> Copy Token
+            </Button>
           </div>
         </CardContent>
       </Card>

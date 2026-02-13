@@ -1,86 +1,150 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Smartphone, ShieldCheck, Truck, QrCode } from 'lucide-react';
 
-const LandingPage = () => {
-  const downloadAPK = () => {
-    // const downloadAPK = () => {
-  window.location.href = 'https://[your-project].supabase.co/storage/v1/object/public/app-releases/app-debug.apk';
-}; (e.g., Supabase Storage)
-    window.location.href = '/path-to-your-apk/app-debug.apk';
+export default function LandingPage() {
+  const navigate = useNavigate();
+
+  // Put your real APK URL in .env: VITE_APK_URL="https://..."
+  const apkUrl =
+    (import.meta as any).env?.VITE_APK_URL ||
+    '/app/britium-express.apk'; // fallback (serve from /public/app/)
+
+  const onDownload = () => {
+    window.location.href = apkUrl;
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-sm">
-        <div className="text-2xl font-bold text-orange-600">Britium Express</div>
-        <button 
-          onClick={downloadAPK}
-          className="bg-orange-600 text-white px-5 py-2 rounded-full font-medium hover:bg-orange-700 transition"
-        >
-          Download App
-        </button>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-white">
+      {/* Top bar */}
+      <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img
+            src="/britium-logo.png"
+            onError={(e) => ((e.currentTarget.style.display = 'none'))}
+            alt="Britium Express"
+            className="h-10 w-10 rounded-lg bg-white/10 p-1"
+          />
+          <div>
+            <div className="text-lg font-semibold tracking-tight">Britium Express</div>
+            <div className="text-xs text-white/60">Luxury Logistics Protocol</div>
+          </div>
+        </div>
 
-      {/* Hero Section */}
-      <header className="max-w-7xl mx-auto px-6 py-16 lg:py-24 flex flex-col lg:flex-row items-center">
-        <div className="lg:w-1/2 text-center lg:text-left">
-          <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
-            Logistics Managed <span className="text-orange-600">Smarter.</span>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="border-white/15 bg-white/5 hover:bg-white/10"
+            onClick={() => navigate('/login')}
+          >
+            Sign In
+          </Button>
+          <Button className="bg-gradient-to-r from-emerald-500 to-amber-400 text-slate-950 font-semibold" onClick={onDownload}>
+            <Smartphone className="h-4 w-4 mr-2" />
+            Download App
+          </Button>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div className="mx-auto max-w-7xl px-6 pt-10 pb-12 grid gap-10 lg:grid-cols-2 items-center">
+        <div className="space-y-5">
+          <Badge className="bg-amber-400/15 text-amber-200 border border-amber-300/20">
+            High-Trust Delivery • Anti-Fraud QR • ePOD
+          </Badge>
+
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+            Operate Deliveries with <span className="text-amber-300">Verified</span> Protocols.
           </h1>
-          <p className="text-lg text-slate-600 mb-8 max-w-xl">
-            The all-in-one platform for BEDA riders and admins. Track orders, manage fleets, and grow your business with our dedicated Android application.
+
+          <p className="text-white/70 text-lg">
+            Riders scan, deliver, and capture signature with GPS+timestamp binding.
+            Finance exports daily cash vs transaction totals and KPI summary.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <button 
-              onClick={downloadAPK}
-              className="flex items-center justify-center gap-3 bg-black text-white px-8 py-4 rounded-xl hover:bg-slate-800 transition shadow-lg"
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              className="h-12 bg-gradient-to-r from-emerald-500 to-amber-400 text-slate-950 font-semibold"
+              onClick={() => navigate('/login')}
             >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Android_robot.svg" className="w-6 h-6" alt="Android" />
-              <div className="text-left">
-                <p className="text-xs uppercase">Download for</p>
-                <p className="text-lg font-semibold">Android APK</p>
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Open Portal
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-12 border-white/15 bg-white/5 hover:bg-white/10"
+              onClick={onDownload}
+            >
+              <Smartphone className="h-4 w-4 mr-2" />
+              Get Android APK
+            </Button>
+          </div>
+
+          <div className="text-xs text-white/50">
+            Note: Default passwords are not shown on screen. Staff must change password on first login.
+          </div>
+        </div>
+
+        {/* Feature cards */}
+        <div className="grid gap-4">
+          <Card className="border-white/10 bg-white/5 backdrop-blur">
+            <CardContent className="p-5 flex gap-4">
+              <div className="h-10 w-10 rounded-xl bg-amber-400/15 flex items-center justify-center">
+                <QrCode className="h-5 w-5 text-amber-200" />
               </div>
-            </button>
-          </div>
-        </div>
+              <div>
+                <div className="font-semibold">Fraud-Resistant QR</div>
+                <div className="text-sm text-white/70">
+                  Daily GroupShipmentId QR payload. Visible details only when scanned.
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* App Mockup */}
-        <div className="lg:w-1/2 mt-12 lg:mt-0 flex justify-center relative">
-          <div className="w-64 h-[500px] bg-slate-800 rounded-[3rem] border-[8px] border-slate-900 shadow-2xl overflow-hidden relative">
-            <div className="absolute top-0 w-full h-6 bg-slate-900 flex justify-center">
-                <div className="w-20 h-4 bg-slate-900 rounded-b-xl"></div>
-            </div>
-            <div className="bg-orange-500 h-full flex items-center justify-center">
-               <span className="text-white font-bold text-xl">BEDA App</span>
-            </div>
-          </div>
-          {/* Decorative circles */}
-          <div className="absolute -z-10 w-72 h-72 bg-orange-200 rounded-full blur-3xl opacity-50 top-10"></div>
-        </div>
-      </header>
+          <Card className="border-white/10 bg-white/5 backdrop-blur">
+            <CardContent className="p-5 flex gap-4">
+              <div className="h-10 w-10 rounded-xl bg-emerald-400/15 flex items-center justify-center">
+                <Truck className="h-5 w-5 text-emerald-200" />
+              </div>
+              <div>
+                <div className="font-semibold">Rider Navigation Mode</div>
+                <div className="text-sm text-white/70">
+                  70/30 map split with “Next Task” dock and KPI strip.
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Features Section */}
-      <section className="bg-white py-20 px-6">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
-          <div className="p-6 rounded-2xl bg-slate-50">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">📦</div>
-            <h3 className="text-xl font-bold mb-2">Real-time Tracking</h3>
-            <p className="text-slate-600">Monitor your deliveries and riders with live GPS updates.</p>
-          </div>
-          <div className="p-6 rounded-2xl bg-slate-50">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">🛡️</div>
-            <h3 className="text-xl font-bold mb-2">Secure Auth</h3>
-            <p className="text-slate-600">Integrated Google Sign-in and Role-based access control.</p>
-          </div>
-          <div className="p-6 rounded-2xl bg-slate-50">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">📊</div>
-            <h3 className="text-xl font-bold mb-2">Admin Dashboard</h3>
-            <p className="text-slate-600">Powerful metrics and user management at your fingertips.</p>
+          <Card className="border-white/10 bg-white/5 backdrop-blur">
+            <CardContent className="p-5 flex gap-4">
+              <div className="h-10 w-10 rounded-xl bg-sky-400/15 flex items-center justify-center">
+                <ShieldCheck className="h-5 w-5 text-sky-200" />
+              </div>
+              <div>
+                <div className="font-semibold">Non‑Repudiable ePOD</div>
+                <div className="text-sm text-white/70">
+                  Signature image binds to GPS + altitude + network timestamp.
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-7xl px-6 py-6 text-xs text-white/50 flex items-center justify-between">
+          <div>© 2026 Britium Express</div>
+          <div className="flex gap-4">
+            <button className="hover:text-white" onClick={() => navigate('/manual')}>Manual</button>
+            <button className="hover:text-white" onClick={() => navigate('/login')}>Login</button>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
-};
-
-export default LandingPage;
+}
