@@ -1,39 +1,44 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Grandeur Design Tokens */
+  --color-luxury-gold: #D4AF37;
+  --color-luxury-obsidian: #0B0C10;
+  --color-luxury-cream: #FAF9F6;
+  
+  --shadow-luxury: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  --radius-luxury: 2rem;
+}
 
 @layer base {
   body {
-    @apply bg-luxury-obsidian text-zinc-100 antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
-  h1, h2, h3 {
-    @apply font-serif tracking-tight;
+    background-color: var(--color-luxury-obsidian);
+    color: var(--color-luxury-cream);
+    @apply antialiased selection:bg-luxury-gold/30;
   }
 }
 
 @layer components {
+  /* Fix: Use CSS color-mix for transparency to avoid Tailwind v4 build errors */
   .luxury-glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-luxury;
+    background: color-mix(in srgb, white 3%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid color-mix(in srgb, white 10%, transparent);
+    box-shadow: var(--shadow-luxury);
   }
 
-  .luxury-input {
-    @apply bg-white/5 border-zinc-800 focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/20 transition-all duration-300;
+  .luxury-card {
+    background: color-mix(in srgb, white 2%, transparent);
+    border: 1px solid color-mix(in srgb, white 5%, transparent);
+    border-radius: var(--radius-luxury);
+    @apply transition-all duration-700 hover:border-luxury-gold/30 hover:bg-white/[0.05];
   }
 
   .luxury-button {
-    @apply bg-luxury-gold text-luxury-obsidian font-bold tracking-widest uppercase text-[10px] 
-           hover:bg-yellow-500 hover:scale-[1.02] active:scale-95 transition-all duration-300
-           shadow-[0_10px_20px_rgba(212,175,55,0.2)];
+    background-color: var(--color-luxury-gold);
+    color: #000;
+    @apply font-bold tracking-[0.3em] uppercase text-[10px] py-4 px-10 rounded-full 
+           hover:scale-105 active:scale-95 transition-all duration-500;
   }
 }
-
-/* Custom Scrollbar for Luxury Aesthetics */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #0B0C10; }
-::-webkit-scrollbar-thumb { 
-  background: #2D2D2D; 
-  border-radius: 10px; 
-}
-::-webkit-scrollbar-thumb:hover { background: #D4AF37; }

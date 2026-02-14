@@ -47,7 +47,6 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-// Google Sign-in နှင့် Push Notifications အတွက် google-services plugin ကို စစ်ဆေးပြီး Apply လုပ်ခြင်း
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.exists()) {
@@ -57,11 +56,34 @@ try {
     logger.info("google-services.json not found, google-services plugin not applied.")
 }
 
-// Kotlin Duplicate Class Error ကို ဖြေရှင်းရန် version အား 1.8.22 သို့ Force လုပ်ခြင်း
+// FIX: Force stable versions to solve API 36 / AGP 8.9.1 mismatch
 configurations.all {
-    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-        if (details.requested.group == 'org.jetbrains.kotlin') {
-            details.useVersion '1.8.22'
+    resolutionStrategy {
+        // Force Kotlin version
+        eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion '1.8.22'
+            }
+        }
+        // Force AndroidX stable versions to prevent API 36 (Android 16) preview requirements
+        force 'androidx.core:core:1.13.1'
+        force 'androidx.core:core-ktx:1.13.1'
+        force 'androidx.activity:activity:1.9.3'
+        force 'androidx.fragment:fragment:1.8.5'
+    }
+}
+configurations.all {
+    resolutionStrategy {
+        // This forces a consistent version for the library causing the crash
+        force 'androidx.lifecycle:lifecycle-process:2.6.2'
+        force 'androidx.lifecycle:lifecycle-runtime:2.6.2'
+        force 'androidx.lifecycle:lifecycle-viewmodel:2.6.2'
+        
+        // Also force a consistent Kotlin version to prevent other common conflicts
+        eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion '1.8.22'
+            }
         }
     }
 }

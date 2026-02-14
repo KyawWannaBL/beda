@@ -2,34 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================= */
+/*  LUXURY DESIGN TOKENS (v3)   */
+/* ============================= */
+
+:root {
+  --color-luxury-gold: #D4AF37;
+  --color-luxury-obsidian: #0B0C10;
+  --color-luxury-cream: #FAF9F6;
+
+  --shadow-luxury: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+  --radius-luxury: 2rem;
+}
+
+/* ============================= */
+/* BASE STYLES */
+/* ============================= */
+
 @layer base {
   body {
-    @apply bg-[#0B0C10] text-[#FAF9F6] antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: var(--color-luxury-obsidian);
+    color: var(--color-luxury-cream);
+    @apply antialiased;
+  }
+
+  ::selection {
+    background-color: rgba(212, 175, 55, 0.3);
   }
 }
+
+/* ============================= */
+/* COMPONENTS */
+/* ============================= */
 
 @layer components {
-  /* The "Glass" effect for cards */
+
+  /* Glass Effect */
+  .luxury-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-luxury);
+  }
+
+  /* Card */
   .luxury-card {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-luxury);
+    transition: all 0.7s ease;
   }
 
-  /* The "Gold" button style */
+  .luxury-card:hover {
+    border-color: rgba(212, 175, 55, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Button */
   .luxury-button {
-    @apply bg-[#D4AF37] text-black font-bold uppercase tracking-[0.2em] text-[10px] 
-           py-4 px-8 rounded-full hover:scale-105 transition-all duration-300;
+    background-color: var(--color-luxury-gold);
+    color: #000;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-size: 10px;
+    padding: 1rem 2.5rem;
+    border-radius: 9999px;
+    transition: all 0.5s ease;
   }
 
-  /* Refined Input fields */
-  .luxury-input {
-    @apply bg-transparent border-b border-white/10 rounded-none px-0 py-4 
-           focus:border-[#D4AF37] focus:ring-0 text-xl font-light transition-all;
+  .luxury-button:hover {
+    transform: scale(1.05);
+  }
+
+  .luxury-button:active {
+    transform: scale(0.95);
   }
 }
-
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0B0C10; }
-::-webkit-scrollbar-thumb { background: #2D2D2D; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
