@@ -1,34 +1,30 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
-type AnyRole = string;
-
-interface RoleBasedRouteProps {
-  allowedRoles: AnyRole[];
+interface Props {
+  allowedRoles?: string[];
   children: React.ReactNode;
 }
 
-export default function RoleBasedRoute({ allowedRoles, children }: RoleBasedRouteProps) {
+export default function RoleBasedRoute({ allowedRoles = [], children }: Props) {
+  const { user, userData, isLoading } = useAuth();
   const location = useLocation();
-  const { user, userData, legacyUser, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return null;
 
-  if (!isAuthenticated || !user || !userData) {
+  if (!user || !userData) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Force password change gate
-  if (userData.mustChangePassword) {
-    return <Navigate to="/login" state={{ from: location, forceChange: true }} replace />;
+  if (userData.must_change_password) {
+    return <Navigate to="/change-password" replace />;
   }
 
-  const role = (userData.role || (legacyUser as any)?.role) as AnyRole;
+  const role = userData.role;
 
-  if (allowedRoles && allowedRoles.length > 0) {
-    const hasAccess = allowedRoles.includes(role);
-    if (!hasAccess) return <Navigate to="/dashboard" replace />;
+  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

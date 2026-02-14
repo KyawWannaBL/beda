@@ -7,6 +7,9 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { roleSidebarMap } from "@/config/roleSidebar";
+import { useAuth } from "@/hooks/useAuth";
+
 import {
   LayoutDashboard,
   Package,
@@ -35,6 +38,9 @@ interface NavItem {
   roles?: AnyRole[]; // if empty/undefined => all authenticated
   badge?: string;
 }
+const { userData } = useAuth();
+
+const allowedMenus = roleSidebarMap[userData?.role || "STAFF"];
 
 const ALL: AnyRole[] = [];
 
