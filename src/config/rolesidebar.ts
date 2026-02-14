@@ -1,9 +1,9 @@
-import { UserRole } from "@/lib/types"
+import { AppRole } from "@/types/roles";
 
 export interface SidebarItem {
-  label: string
-  path: string
-  roles: UserRole[]
+  label: string;
+  path: string;
+  roles: AppRole[];
 }
 
 export const roleSidebar: SidebarItem[] = [
@@ -14,45 +14,34 @@ export const roleSidebar: SidebarItem[] = [
       "APP_OWNER",
       "SUPER_ADMIN",
       "OPERATIONS_ADMIN",
-      "FINANCE_ADMIN",
-      "SUPERVISOR",
       "WAREHOUSE_MANAGER",
-      "SUBSTATION_MANAGER",
-      "STAFF",
-      "RIDER",
-      "DRIVER"
+      "SUPERVISOR",
+      "STAFF"
     ],
   },
   {
     label: "Shipments",
     path: "/shipments",
     roles: [
-      "APP_OWNER",
-      "SUPER_ADMIN",
       "OPERATIONS_ADMIN",
       "SUPERVISOR",
-      "WAREHOUSE_MANAGER",
-      "SUBSTATION_MANAGER",
-      "STAFF"
+      "STAFF",
+      "RIDER",
+      "DRIVER"
     ],
   },
   {
     label: "Finance",
     path: "/finance",
     roles: [
-      "APP_OWNER",
-      "SUPER_ADMIN",
       "FINANCE_ADMIN",
       "FINANCE_STAFF",
       "FINANCE_USER"
     ],
   },
   {
-    label: "Admin Panel",
-    path: "/admin",
-    roles: [
-      "APP_OWNER",
-      "SUPER_ADMIN"
-    ],
+    label: "User Management",
+    path: "/admin/users",
+    roles: ["APP_OWNER", "SUPER_ADMIN"],
   },
-]
+];

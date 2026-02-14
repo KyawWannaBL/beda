@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { roleSidebarMap } from "@/config/roleSidebar";
+import { roleSidebar } from "@/config/RoleSidebar";
 import {
   LayoutDashboard, Package, QrCode, BarChart3,
   DollarSign, Warehouse, BookOpen, Truck,
