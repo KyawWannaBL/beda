@@ -1,93 +1,123 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { roleSidebar } from "@/config/RoleSidebar";
-import {
-  LayoutDashboard, Package, QrCode, BarChart3,
-  DollarSign, Warehouse, BookOpen, Truck,
-  LogOut, Menu, Shield, X
-} from 'lucide-react';
+import { enterpriseNav } from '@/config/navigation';
+import { AppRole } from '@/types/roles';
+import { LogOut, Menu, X, Bell, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import NotificationBell from './NotificationBell';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
-  // Call hook inside the component function to fix the "Black Screen" crash
-  const { userData, legacyUser, logout, isLoading } = useAuth();
-  
+  const { userData, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [language, setLanguage] = useState<'en' | 'my'>('en');
+  const userRole = (userData?.role as AppRole) || 'STAFF';
 
-  const role = userData?.role || (legacyUser as any)?.role || 'STAFF';
-
-  const navItems = [
-    { id: 'dashboard', labelEn: 'Dashboard', labelMy: 'ဒက်ရှ်ဘုတ်', href: '/dashboard', icon: LayoutDashboard },
-    { id: 'shipments', labelEn: 'Shipments', labelMy: 'ပို့ဆောင်မှုများ', href: '/shipments', icon: Package, badge: 'OPS' },
-    { id: 'qr', labelEn: 'QR Operations', labelMy: 'QR လုပ်ငန်းများ', href: '/qr', icon: QrCode },
-    { id: 'reports', labelEn: 'Reports', labelMy: 'အစီရင်ခံစာများ', href: '/reports', icon: BarChart3 },
-    { id: 'finance', labelEn: 'Finance', labelMy: 'ဘဏ္ဍာရေး', href: '/finance', icon: DollarSign },
-    { id: 'hub', labelEn: 'Hub Ops', labelMy: 'ဟပ် လုပ်ငန်းများ', href: '/hub', icon: Warehouse },
-    { id: 'courier', labelEn: 'Courier App', labelMy: 'Courier App', href: '/courier', icon: Truck },
-    { id: 'manual', labelEn: 'Manual', labelMy: 'လမ်းညွှန်', href: '/manual', icon: BookOpen },
-  ];
-
-  // Dynamically filter visibility based on the roleSidebarMap
-  const visibleItems = useMemo(() => {
-    const allowedIds = roleSidebarMap[role] || ["dashboard", "manual"];
-    return navItems.filter((item) => allowedIds.includes(item.id));
-  }, [role]);
-
-  const onLogout = async () => {
-    await logout();
-    navigate('/login', { replace: true });
-  };
-
-  if (isLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center">Loading...</div>;
+  const filteredNav = enterpriseNav.filter(item => {
+    const hasRole = item.roles.includes(userRole);
+    const flagActive = item.featureFlag 
+      ? import.meta.env[item.featureFlag] === 'true' 
+      : true;
+    return hasRole && flagActive;
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 text-white">
-      {/* Top bar */}
-      <div className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/60 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="md:hidden" onClick={() => setSidebarOpen(true)}>
-              <Menu className="h-4 w-4" />
-            </Button>
-            <span className="font-bold text-amber-400 tracking-widest">BRITIUM</span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => setLanguage(l => l === 'en' ? 'my' : 'en')}>
-              {language.toUpperCase()}
-            </Button>
-            <Button variant="outline" size="sm" className="text-red-400 border-red-400/20" onClick={onLogout}>
-              <LogOut className="h-4 w-4 mr-2" /> Logout
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="flex h-screen bg-luxury-obsidian text-luxury-cream overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-      <div className="mx-auto max-w-7xl grid md:grid-cols-[260px_1fr]">
-        <aside className="hidden md:block border-r border-white/10 p-6 space-y-2">
-          {visibleItems.map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 px-4 py-2 rounded-xl transition",
-                isActive ? "bg-white/10 text-amber-400" : "text-white/60 hover:bg-white/5"
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              <span>{language === 'en' ? item.labelEn : item.labelMy}</span>
-            </NavLink>
-          ))}
-        </aside>
-        <main className="p-6">{children}</main>
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 w-72 luxury-glass border-r border-white/5 transition-transform duration-300 md:relative md:translate-x-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-luxury-gold to-amber-600 flex items-center justify-center shadow-lg shadow-luxury-gold/20">
+              <span className="text-luxury-obsidian font-black text-xl">B</span>
+            </div>
+            <div>
+              <h1 className="font-bold tracking-tighter text-xl text-luxury-gold">BRITIUM</h1>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Logistics Cloud</p>
+            </div>
+          </div>
+
+          <nav className="space-y-2">
+            {filteredNav.map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
+                  isActive 
+                    ? "bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20" 
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <item.icon className={cn("h-5 w-5 transition-transform group-hover:scale-110")} />
+                <span className="font-medium text-sm">{item.title}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        <div className="absolute bottom-0 w-full p-6 border-t border-white/5">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
+              <User className="h-4 w-4 text-luxury-gold" />
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-xs font-bold truncate">{userData?.fullName || 'User'}</p>
+              <p className="text-[10px] text-white/40 truncate">{userRole}</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-400/10"
+            onClick={logout}
+          >
+            <LogOut className="h-4 w-4 mr-3" />
+            Logout
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-20 luxury-glass border-b border-white/5 flex items-center justify-between px-8 z-30">
+          <button className="md:hidden p-2 text-white" onClick={() => setSidebarOpen(true)}>
+            <Menu className="h-6 w-6" />
+          </button>
+
+          <div className="hidden md:block">
+            <h2 className="text-sm font-medium text-white/60">System Operational</h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+            <div className="h-8 w-[1px] bg-white/10 mx-2" />
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] text-white/40 uppercase">Environment</p>
+              <p className="text-xs font-mono text-luxury-gold">PROD-ENTERPRISE</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-8 relative custom-scrollbar">
+          {children}
+        </main>
       </div>
     </div>
   );
