@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import {
   EnterprisePortal,
   Dashboard,
@@ -19,29 +19,36 @@ import Layout from './components/Layout';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import { useAuth } from './hooks/useAuth';
 
+/**
+ * Main Application Component
+ * Handles global routing, authentication state, and role-based access control.
+ */
 function App() {
   const { loading } = useAuth();
-  const location = useLocation();
 
+  // Show a centralized loading state while checking Supabase session
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="relative h-16 w-16">
+          <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+        </div>
       </div>
     );
   }
 
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* --- Public Access Routes --- */}
       <Route path="/" element={<EnterprisePortal />} />
       <Route path="/portal" element={<EnterprisePortal />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected Routes - Wrapped in shared Layout */}
+      {/* --- Private Enterprise Routes (Requires Auth & Layout) --- */}
       <Route element={<Layout />}>
         
-        {/* User Specific Dashboards */}
+        {/* General Dashboard (Base access) */}
         <Route
           path="/dashboard"
           element={
@@ -51,6 +58,7 @@ function App() {
           }
         />
 
+        {/* Master Admin Mission Control */}
         <Route
           path="/admin/dashboard"
           element={
@@ -60,7 +68,7 @@ function App() {
           }
         />
         
-        {/* Operations & Logistics */}
+        {/* Logistics & Supply Chain */}
         <Route
           path="/operations"
           element={
@@ -79,7 +87,7 @@ function App() {
           }
         />
         
-        {/* Business & Finance */}
+        {/* Revenue & Growth */}
         <Route
           path="/finance"
           element={
@@ -98,7 +106,7 @@ function App() {
           }
         />
 
-        {/* Administration & HR */}
+        {/* Personnel & Administration */}
         <Route
           path="/hr"
           element={
@@ -144,6 +152,7 @@ function App() {
           }
         />
 
+        {/* Data & Analytics */}
         <Route
           path="/reports"
           element={
@@ -153,6 +162,9 @@ function App() {
           }
         />
       </Route>
+
+      {/* --- Fallback Route --- */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
