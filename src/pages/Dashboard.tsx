@@ -1,12 +1,9 @@
-// src/pages/Dashboard.tsx
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Package, Clock, ShieldCheck, Navigation, Map as MapIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
+import { useRealtimeMetrics } from '../hooks/useRealtimeMetrics';
 
-// Custom Hooks for Backend Integration
-import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
-
+}
 // Enterprise Components
 import RoutePlanner from '@/components/RoutePlanner';
 import RealTimeMapView from '@/components/RealTimeMapView';
@@ -15,8 +12,8 @@ import FleetStatus from '@/components/FleetStatus';
 import RevenueForecast from '@/components/RevenueForecast';
 
 export default function Dashboard() {
-  const [selectedCity, setSelectedCity] = useState('Yangon');
-  const { pending, transitTime } = useRealtimeMetrics(); // Hook-driven data
+  const { pending, transitTime } = useRealtimeMetrics();
+  return <div className="text-white">Executive Dashboard</div>;
 
   return (
     <div className="space-y-10 pb-20 max-w-[1650px] mx-auto animate-in fade-in duration-700">

@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../useAuth';
+import { useAuth } from '../hooks/useAuth'; // FIXED PATH
 import { 
-  FileText, 
-  Upload, 
-  ShieldCheck, 
-  Truck, 
-  Download, 
-  AlertCircle,
-  Plus
+  FileText, Upload, ShieldCheck, Truck, Download, AlertCircle, Plus
 } from 'lucide-react';
 
 export default function Operations() {
@@ -16,23 +10,15 @@ export default function Operations() {
   const [idFile, setIdFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
 
-  // Story B: Logic - Check if user is an Individual Sender
   const isIndividual = role === 'CUSTOMER' || role === 'INDIVIDUAL_SENDER';
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setIdFile(e.target.files[0]);
-  };
 
   return (
     <div className="space-y-6 text-slate-100 p-4">
-      {/* --- HEADER --- */}
       <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-            Shipment Registration
-          </h1>
-          <p className="text-slate-400 mt-1">Register new parcels or upload manifests in bulk.</p>
-        </div>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
+          Shipment Registration
+        </h1>
+      </div>
         
         {/* Tab Switcher */}
         <div className="flex bg-slate-800/50 p-1 rounded-xl border border-slate-700">
