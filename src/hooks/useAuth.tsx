@@ -1,6 +1,6 @@
 import {
-  useState,
   useEffect,
+  useState,
   createContext,
   useContext,
   ReactNode,
@@ -8,160 +8,206 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  fullName?: string;
-  isActive: boolean;
-  mustChangePassword: boolean;
-  permissions: Record<string, boolean>;
-}
-
-interface AuthContextType {
-  user: any | null;
-  userData: UserData | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+type AuthContextType = {
+  user: any;
+  role: string | null;
+  branchId: string | null;
+  permissions: string[];
+  hasPermission: (code: string) => boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  changePassword: (newPassword: string) => Promise<void>;
-  hasPermission: (permission: string) => boolean;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [branchId, setBranchId] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  // 🔥 Fetch profile from user_profiles
-  const fetchUserProfile = async (uid: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
+  // ENTERPRISE Permission Loader
+  const loadPermissions = async (roleName: string) => {
+    const { data, error } = await supabase
+      .from('role_permissions')
+      .select(`
+        permission_id,
+        permissions (code)
+      `)
+      .eq('role', roleName);
 
-      if (error) throw error;
-
-      if (!data) return;
-
-      const profile: UserData = {
-        uid: data.user_id,
-        email: data.email,
-        role: data.role,
-        fullName: data.full_name,
-        isActive: data.status === 'active',
-        mustChangePassword: data.must_change_password,
-        permissions: data.permissions || {},
-      };
-
-      setUserData(profile);
-
-      // 🚨 Force password change
-      if (profile.mustChangePassword) {
-        navigate('/change-password');
-      }
-
-    } catch (err: any) {
-      console.error('Profile fetch error:', err.message);
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      console.error("Permission load failed:", error);
+      return;
     }
+
+    const codes = data?.map((p: any) => p.permissions?.code).filter(Boolean) || [];
+    setPermissions(codes);
   };
 
-  // 🔥 Init Session
-  useEffect(() => {
-    const init = async () => {
-      const { data } = await supabase.auth.getSession();
+  // Shared function to fetch profile and then permissions
+  const fetchUserContext = async (userId: string) => {
+    try {
+      // 1. Load profile (Role & Branch)
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, branch_id')
+        .eq('id', userId)
+        .single();
 
-      if (data.session?.user) {
-        setUser(data.session.user);
-        await fetchUserProfile(data.session.user.id);
-      } else {
-        setIsLoading(false);
+      if (profileError) throw profileError;
+
+      if (profile) {
+        setRole(profile.role);
+        setBranchId(profile.branch_id);
+
+        // 2. If role exists, load permissions
+        if (profile.role) {
+          await loadPermissions(profile.role);
+        }
+        
+        return profile;
       }
+    } catch (error) {
+      console.error('Error loading user context:', error);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData?.session?.user) {
+        setLoading(false);
+        return;
+      }
+
+      const currentUser = sessionData.session.user;
+      setUser(currentUser);
+
+      await fetchUserContext(currentUser.id);
+
+      setLoading(false);
     };
 
-    init();
+    loadUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          await fetchUserProfile(session.user.id);
+            setUser(session.user);
+            await fetchUserContext(session.user.id);
         }
-
         if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setUserData(null);
-          setIsLoading(false);
+            setUser(null);
+            setRole(null);
+            setBranchId(null);
+            setPermissions([]);
         }
-      }
-    );
+    });
 
     return () => {
-      listener.subscription.unsubscribe();
-    };
+        listener.subscription.unsubscribe();
+    }
   }, []);
 
-  // 🔐 Login
+  // ✅ FRONTEND HEARTBEAT (Auto Session Update)
+  useEffect(() => {
+    // Only run if we have a logged-in user
+    if (!user) return;
+
+    const updateSession = async () => {
+      try {
+        await supabase.from("user_sessions").upsert({
+          user_id: user.id,
+          role: role,          // Send current role state
+          branch_id: branchId, // Send current branchId state
+          last_seen: new Date().toISOString(),
+          is_active: true
+        }, { onConflict: 'user_id' });
+      } catch (err) {
+        console.error("Heartbeat failed:", err);
+      }
+    };
+
+    // 1. Send immediate heartbeat on mount/change
+    updateSession();
+
+    // 2. Set interval for every 30 seconds
+    const interval = setInterval(updateSession, 30000);
+
+    // Cleanup interval on unmount or user change
+    return () => clearInterval(interval);
+  }, [user, role, branchId]);
+
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
+    if (data.user) {
+        setUser(data.user);
+        
+        const profile = await fetchUserContext(data.user.id);
+        
+        // Initial Session Log (Optional, since Heartbeat will likely catch it too, 
+        // but this table 'active_sessions' might be an audit log vs 'user_sessions' which is status)
+        if (profile) {
+          try {
+            await supabase.from('active_sessions').insert({
+              user_id: data.user.id,
+              branch_id: profile.branch_id,
+              role: profile.role
+            });
+          } catch (sessionError) {
+            console.error('Failed to register active session:', sessionError);
+          }
+        }
+
+        navigate('/dashboard');
+    }
   };
 
-  // 🔐 Logout
   const logout = async () => {
+    // Optional: Mark session inactive on logout
+    if (user) {
+       await supabase.from("user_sessions").upsert({
+          user_id: user.id,
+          is_active: false,
+          last_seen: new Date().toISOString()
+       }, { onConflict: 'user_id' });
+    }
+
     await supabase.auth.signOut();
+    setUser(null);
+    setRole(null);
+    setBranchId(null);
+    setPermissions([]);
     navigate('/login');
   };
 
-  // 🔐 Change Password
-  const changePassword = async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) throw error;
-
-    await supabase
-      .from('user_profiles')
-      .update({
-        must_change_password: false,
-        last_password_change: new Date(),
-      })
-      .eq('user_id', user?.id);
-
-    navigate('/dashboard');
-  };
-
-  // 🔐 Permission Checker
-  const hasPermission = (permission: string) => {
-    return !!userData?.permissions?.[permission];
+  const hasPermission = (code: string) => {
+    if (role === 'APP_OWNER') return true;
+    return permissions.includes(code);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        userData,
-        isAuthenticated: !!user,
-        isLoading,
+        role,
+        branchId,
+        permissions,
+        hasPermission,
+        loading,
         login,
         logout,
-        changePassword,
-        hasPermission,
       }}
     >
       {children}

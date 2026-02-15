@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { useAuth } from "@/hooks/useAuth" // Import the auth hook
 
 import { cn } from "@/lib/utils"
 
@@ -37,10 +38,19 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  requiredPermission?: string // New prop for permission gating
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, requiredPermission, ...props }, ref) => {
+    // 1. Hook into the permission system
+    const { hasPermission } = useAuth()
+
+    // 2. Security Check: If permission is required but missing, do not render
+    if (requiredPermission && !hasPermission(requiredPermission)) {
+      return null
+    }
+
     const Comp = asChild ? Slot : "button"
     return (
       <Comp

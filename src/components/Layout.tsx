@@ -4,22 +4,43 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { enterpriseNav } from '@/config/navigation';
-import { AppRole } from '@/types/roles';
-import { LogOut, Menu, X, Bell, User } from 'lucide-react';
+import { LogOut, Menu, User, Users } from 'lucide-react'; // Added Users icon
 import { Button } from '@/components/ui/button';
 import NotificationBell from './NotificationBell';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const { userData, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const userRole = (userData?.role as AppRole) || 'STAFF';
+// Mapping specific routes to permission codes
+const ROUTE_PERMISSIONS: Record<string, string> = {
+  '/dashboard': 'dashboard.view',
+  '/admin/users': 'users.manage',
+  '/inventory': 'inventory.view',
+  '/reports': 'reports.view',
+  '/settings': 'settings.manage'
+};
 
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const { user, logout, hasPermission } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Permission-driven filtering
   const filteredNav = enterpriseNav.filter(item => {
-    const hasRole = item.roles.includes(userRole);
+    // 1. Check Feature Flags
     const flagActive = item.featureFlag 
       ? import.meta.env[item.featureFlag] === 'true' 
       : true;
-    return hasRole && flagActive;
+
+    if (!flagActive) return false;
+
+    // 2. Check Permissions
+    const requiredPermission = ROUTE_PERMISSIONS[item.href];
+    
+    // If we have a hardcoded APP_OWNER check for a route, we might want to skip it here 
+    // to avoid duplication, or strictly rely on the permission system.
+    // For now, we render the config-based items as usual.
+    if (requiredPermission) {
+      return hasPermission(requiredPermission);
+    }
+
+    return true;
   });
 
   return (
@@ -52,6 +73,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="space-y-2">
+            {/* Standard Permission-based Nav Items */}
             {filteredNav.map((item) => (
               <NavLink
                 key={item.href}
@@ -68,6 +90,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <span className="font-medium text-sm">{item.title}</span>
               </NavLink>
             ))}
+
+            {/* --- NEW: Dynamic APP_OWNER Exclusive Link --- */}
+            {user?.role === "APP_OWNER" && (
+              <NavLink
+                to="/admin/users"
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
+                  isActive 
+                    ? "bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20" 
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <Users className={cn("h-5 w-5 transition-transform group-hover:scale-110")} />
+                <span className="font-medium text-sm">User Management</span>
+              </NavLink>
+            )}
+            {/* --------------------------------------------- */}
+
           </nav>
         </div>
 
@@ -77,8 +118,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <User className="h-4 w-4 text-luxury-gold" />
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold truncate">{userData?.fullName || 'User'}</p>
-              <p className="text-[10px] text-white/40 truncate">{userRole}</p>
+              <p className="text-xs font-bold truncate">{user?.full_name || 'User'}</p>
+              <p className="text-[10px] text-white/40 truncate">{user?.role || 'Guest'}</p>
             </div>
           </div>
           <Button 

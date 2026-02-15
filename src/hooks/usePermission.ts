@@ -1,6 +1,11 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth"
 
-export const usePermission = (permission: string) => {
-  const { userData } = useAuth();
-  return !!userData?.permissions?.[permission];
-};
+export const usePermission = () => {
+  const { permissions } = useAuth()
+
+  const can = (permission: string) => {
+    return permissions?.includes(permission)
+  }
+
+  return { can }
+}
