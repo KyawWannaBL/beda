@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth'; // FIXED PATH
+import { useAuth } from '../hooks/useAuth'; 
 import { 
-  FileText, Upload, ShieldCheck, Truck, Download, AlertCircle, Plus
+  FileText, 
+  Upload, 
+  ShieldCheck, 
+  Truck, 
+  Download, 
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 
 export default function Operations() {
@@ -10,15 +16,23 @@ export default function Operations() {
   const [idFile, setIdFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
 
+  // Logic: Check if user is an Individual Sender
   const isIndividual = role === 'CUSTOMER' || role === 'INDIVIDUAL_SENDER';
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) setIdFile(e.target.files[0]);
+  };
 
   return (
     <div className="space-y-6 text-slate-100 p-4">
+      {/* --- HEADER --- */}
       <div className="flex justify-between items-end">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-          Shipment Registration
-        </h1>
-      </div>
+        <div>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
+            Shipment Registration
+          </h1>
+          <p className="text-slate-400 mt-1">Register new parcels or upload manifests in bulk.</p>
+        </div>
         
         {/* Tab Switcher */}
         <div className="flex bg-slate-800/50 p-1 rounded-xl border border-slate-700">
@@ -37,6 +51,7 @@ export default function Operations() {
         </div>
       </div>
 
+      {/* --- CONTENT GRID --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* --- FORM SECTION --- */}
@@ -44,7 +59,7 @@ export default function Operations() {
           {activeTab === 'single' ? (
             <div className="luxury-glass p-8 rounded-2xl border border-slate-700/50 space-y-8">
               
-              {/* Sender Info (Story A) */}
+              {/* Sender Info */}
               <section className="space-y-4">
                 <div className="flex items-center gap-2 text-emerald-400">
                   <Truck size={20} />
@@ -59,7 +74,7 @@ export default function Operations() {
                 </div>
               </section>
 
-              {/* Identity Verification (Story B) */}
+              {/* Identity Verification */}
               {isIndividual && (
                 <section className="p-6 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-4">
                   <div className="flex items-center gap-2 text-amber-400">
@@ -114,7 +129,7 @@ export default function Operations() {
               </div>
             </div>
           ) : (
-            /* Bulk Upload Section (Story C) */
+            /* Bulk Upload Section */
             <div className="luxury-glass p-8 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center min-h-[400px] space-y-6">
               <div className="h-20 w-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
                 <Upload className="text-emerald-500" size={40} />
@@ -136,7 +151,7 @@ export default function Operations() {
           )}
         </div>
 
-        {/* --- SIDEBAR: Requirements & Help --- */}
+        {/* --- SIDEBAR --- */}
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-blue-500/5 border border-blue-500/20">
             <h4 className="flex items-center gap-2 text-blue-400 font-bold mb-4">
@@ -146,22 +161,7 @@ export default function Operations() {
             <ul className="space-y-3 text-sm text-slate-400">
               <li className="flex gap-2"><span>•</span> Standard labels are 4" x 6" A4 PDF.</li>
               <li className="flex gap-2"><span>•</span> QR codes include Waybill ID & JSON data.</li>
-              <li className="flex gap-2"><span>•</span> Restricted items include flammables and hazardous chemicals.</li>
             </ul>
-          </div>
-          
-          <div className="p-6 rounded-2xl bg-[#0f172a]/40 border border-slate-700/50">
-            <h4 className="text-white font-bold mb-4">System Information</h4>
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Service Area</span>
-                <span className="text-slate-300">Greater Yangon / MDY / NPT</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Waybill Prefix</span>
-                <span className="text-emerald-500 font-mono">BRT-</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
