@@ -23,6 +23,7 @@
   "dependencies": {
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^7.5.0",
+    "@capacitor/configure": "^2.0.10",
     "@capacitor/core": "^8.1.0",
     "@capacitor/ios": "^8.1.0",
     "@dataconnect/generated": "file:src/dataconnect-generated",

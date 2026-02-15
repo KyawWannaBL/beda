@@ -1,4 +1,4 @@
-package com.britiumexpress.beda;
+package com.britium.express;
 
 import com.getcapacitor.BridgeActivity;
 

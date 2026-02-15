@@ -101,3 +101,5 @@ uploaded_files/
 
 
 .vercel
+*.apk
+/public/*.apk

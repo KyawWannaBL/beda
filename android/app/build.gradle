@@ -1,24 +1,21 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.britiumexpress.beda"
+    namespace "com.britium.express"
     compileSdk rootProject.ext.compileSdkVersion
-
     defaultConfig {
-        applicationId "com.britiumexpress.beda"
+        applicationId "com.britium.express"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        
-        // INCREMENTED VALUES:
-        versionCode 2           // Changed from 1 to 2
-        versionName "1.1"       // Changed from "1.0" to "1.1" (or "2.0")
-        
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -28,7 +25,7 @@ android {
 }
 
 repositories {
-    flatDir {
+    flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
@@ -36,7 +33,7 @@ repositories {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "androidx.coordinatorlayout:coordinatorlayout:1.2.0"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
@@ -49,41 +46,9 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.exists()) {
+    if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied.")
-}
-
-// FIX: Force stable versions to solve API 36 / AGP 8.9.1 mismatch
-configurations.all {
-    resolutionStrategy {
-        // Force Kotlin version
-        eachDependency { DependencyResolveDetails details ->
-            if (details.requested.group == 'org.jetbrains.kotlin') {
-                details.useVersion '1.8.22'
-            }
-        }
-        // Force AndroidX stable versions to prevent API 36 (Android 16) preview requirements
-        force 'androidx.core:core:1.13.1'
-        force 'androidx.core:core-ktx:1.13.1'
-        force 'androidx.activity:activity:1.9.3'
-        force 'androidx.fragment:fragment:1.8.5'
-    }
-}
-configurations.all {
-    resolutionStrategy {
-        // This forces a consistent version for the library causing the crash
-        force 'androidx.lifecycle:lifecycle-process:2.6.2'
-        force 'androidx.lifecycle:lifecycle-runtime:2.6.2'
-        force 'androidx.lifecycle:lifecycle-viewmodel:2.6.2'
-        
-        // Also force a consistent Kotlin version to prevent other common conflicts
-        eachDependency { DependencyResolveDetails details ->
-            if (details.requested.group == 'org.jetbrains.kotlin') {
-                details.useVersion '1.8.22'
-            }
-        }
-    }
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }

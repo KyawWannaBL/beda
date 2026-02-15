@@ -1,65 +1,150 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LandingPage from "@/pages/LandingPage";
-import Login from "@/pages/Login";
-import Dashboard from "@/pages/Dashboard";
-import ChangePassword from "@/pages/ChangePassword";
-import AdminDashboard from "@/pages/AdminDashboard"; // Added import
-import Layout from "@/components/Layout"; // Added import
-import RoleBasedRoute from "@/components/RoleBasedRoute";
-import { AuthProvider } from "@/hooks/useAuth";
+import { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import {
+  EnterprisePortal, // Updated import
+  Dashboard,
+  Operations,
+  Finance,
+  HumanResources,
+  Marketing,
+  Substation,
+  RoleManagement,
+  UserManagement,
+  SystemSettings,
+  AuditLogs,
+  Reports,
+  Unauthorized
+} from './pages';
+import Layout from './components/Layout';
+import RoleBasedRoute from './components/RoleBasedRoute';
+import { useAuth } from './hooks/useAuth';
 
-function Protected({
-  children,
-  allowedRoles,
-}: {
-  children: React.ReactNode;
-  allowedRoles?: string[];
-}) {
-  return <RoleBasedRoute allowedRoles={allowedRoles || []}>{children}</RoleBasedRoute>;
-}
+function App() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-export default function App() {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
+    <Routes>
+      {/* Public Routes - Now pointing to EnterprisePortal */}
+      <Route path="/" element={<EnterprisePortal />} />
+      <Route path="/portal" element={<EnterprisePortal />} />
+      
+      {/* 403 Page */}
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <Protected>
-                <Dashboard />
-              </Protected>
-            }
-          />
+      {/* Protected Routes */}
+      <Route element={<Layout />}>
+        <Route
+          path="/dashboard"
+          element={
+            <RoleBasedRoute>
+              <Dashboard />
+            </RoleBasedRoute>
+          }
+        />
+        
+        {/* Operations Routes */}
+        <Route
+          path="/operations"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'OPERATIONS_STAFF']}>
+              <Operations />
+            </RoleBasedRoute>
+          }
+        />
+        
+        {/* Finance Routes */}
+        <Route
+          path="/finance"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'FINANCE_ADMIN', 'FINANCE_STAFF', 'FINANCE_USER']}>
+              <Finance />
+            </RoleBasedRoute>
+          }
+        />
+        
+        {/* HR Routes */}
+        <Route
+          path="/hr"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'HR_ADMIN']}>
+              <HumanResources />
+            </RoleBasedRoute>
+          }
+        />
+        
+        {/* Marketing Routes */}
+        <Route
+          path="/marketing"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'MARKETING_ADMIN', 'MARKETING']}>
+              <Marketing />
+            </RoleBasedRoute>
+          }
+        />
 
-          <Route
-            path="/change-password"
-            element={
-              <Protected>
-                <ChangePassword />
-              </Protected>
-            }
-          />
+        {/* Substation Routes */}
+        <Route
+          path="/substation"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'SUBSTATION_MANAGER']}>
+              <Substation />
+            </RoleBasedRoute>
+          }
+        />
 
-          {/* ENTERPRISE ADMIN ROUTING */}
-          <Route
-            path="/admin/*"
-            element={
-              <Protected allowedRoles={['APP_OWNER', 'SUPER_ADMIN']}>
-                <Layout>
-                  <AdminDashboard />
-                </Layout>
-              </Protected>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+        {/* Admin Routes */}
+        <Route
+          path="/admin/users"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
+              <UserManagement />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="/admin/roles"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
+              <RoleManagement />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
+              <SystemSettings />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
+              <AuditLogs />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'FINANCE_ADMIN']}>
+              <Reports />
+            </RoleBasedRoute>
+          }
+        />
+      </Route>
+    </Routes>
   );
 }
+
+export default App;

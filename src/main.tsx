@@ -1,21 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App'
 import './index.css'
 
-// Environment variable verification
-if (import.meta.env.VITE_ENABLE_ROUTE_MESSAGING) {
-  console.log("Route Messaging Enabled: true");
-}
-
-const rootElement = document.getElementById('root');
-
-if (!rootElement) {
-  throw new Error("Failed to find the root element. Ensure index.html has <div id='root'></div>");
-}
-
-ReactDOM.createRoot(rootElement).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
-);
+)
