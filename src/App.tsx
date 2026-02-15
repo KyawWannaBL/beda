@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import {
-  EnterprisePortal, // Updated import
+  EnterprisePortal,
   Dashboard,
+  AdminDashboard, 
   Operations,
   Finance,
   HumanResources,
@@ -20,7 +20,7 @@ import RoleBasedRoute from './components/RoleBasedRoute';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -33,15 +33,15 @@ function App() {
 
   return (
     <Routes>
-      {/* Public Routes - Now pointing to EnterprisePortal */}
+      {/* Public Routes */}
       <Route path="/" element={<EnterprisePortal />} />
       <Route path="/portal" element={<EnterprisePortal />} />
-      
-      {/* 403 Page */}
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Protected Routes */}
+      {/* Protected Routes - Wrapped in shared Layout */}
       <Route element={<Layout />}>
+        
+        {/* User Specific Dashboards */}
         <Route
           path="/dashboard"
           element={
@@ -50,8 +50,17 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
+              <AdminDashboard />
+            </RoleBasedRoute>
+          }
+        />
         
-        {/* Operations Routes */}
+        {/* Operations & Logistics */}
         <Route
           path="/operations"
           element={
@@ -60,8 +69,17 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
+        <Route
+          path="/substation"
+          element={
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'SUBSTATION_MANAGER']}>
+              <Substation />
+            </RoleBasedRoute>
+          }
+        />
         
-        {/* Finance Routes */}
+        {/* Business & Finance */}
         <Route
           path="/finance"
           element={
@@ -71,17 +89,6 @@ function App() {
           }
         />
         
-        {/* HR Routes */}
-        <Route
-          path="/hr"
-          element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'HR_ADMIN']}>
-              <HumanResources />
-            </RoleBasedRoute>
-          }
-        />
-        
-        {/* Marketing Routes */}
         <Route
           path="/marketing"
           element={
@@ -91,17 +98,16 @@ function App() {
           }
         />
 
-        {/* Substation Routes */}
+        {/* Administration & HR */}
         <Route
-          path="/substation"
+          path="/hr"
           element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'SUBSTATION_MANAGER']}>
-              <Substation />
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'HR_ADMIN']}>
+              <HumanResources />
             </RoleBasedRoute>
           }
         />
 
-        {/* Admin Routes */}
         <Route
           path="/admin/users"
           element={
@@ -110,6 +116,7 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
         <Route
           path="/admin/roles"
           element={
@@ -118,6 +125,7 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
         <Route
           path="/admin/settings"
           element={
@@ -126,6 +134,7 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
         <Route
           path="/admin/audit"
           element={
@@ -134,6 +143,7 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
         <Route
           path="/reports"
           element={

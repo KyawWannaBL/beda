@@ -1,5 +1,7 @@
+// src/pages/index.ts
 export { default as EnterprisePortal } from './EnterprisePortal'
 export { default as Dashboard } from './Dashboard'
+export { default as AdminDashboard } from './AdminDashboard' // Add this line
 export { default as Operations } from './Operations'
 export { default as Finance } from './Finance'
 export { default as HumanResources } from './HumanResources'
