@@ -1,17 +1,16 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path'; // Add this import
-
+// vite.config.ts
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      // This tells Vite that @ translates to the /src folder
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  base: '/',
+  // ... existing config
   build: {
-    outDir: 'dist',
-  }
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-icons': ['lucide-react'],
+          'vendor-ui': ['framer-motion', '@radix-ui/react-dialog'],
+          'vendor-db': ['@supabase/supabase-js'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000, // Raises limit to 1MB to hide the warning
+  },
 });
