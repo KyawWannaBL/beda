@@ -1,30 +1,40 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth'; // Use relative path for stability
 
 interface Props {
+  allowedRoles?: string[];
   requiredPermission?: string;
   children: React.ReactNode;
 }
 
-export default function RoleBasedRoute({ requiredPermission, children }: Props) {
-  // We now use 'user' (which contains the profile) and the 'hasPermission' helper
-  const { user, hasPermission, isLoading } = useAuth();
+export default function RoleBasedRoute({ allowedRoles, requiredPermission, children }: Props) {
+  const { user, role, hasPermission, loading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) return null;
+  // 1. Prevent "Black Screen" during init
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="text-emerald-500 font-mono animate-pulse text-xs tracking-[0.3em]">
+          VERIFYING ENCRYPTED SESSION...
+        </div>
+      </div>
+    );
+  }
 
+  // 2. Redirect to Login if no session exists
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  // Handle password change enforcement (checking snake_case from DB profile)
-  if (user.must_change_password) {
-    return <Navigate to="/change-password" replace />;
+  // 3. Role-Based Access Control (RBAC)
+  if (allowedRoles && role && !allowedRoles.includes(role) && role !== 'APP_OWNER') {
+    console.warn(`Access Denied: Role '${role}' lacks authority for this module.`);
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  // --- PERMISSION CHECK UPGRADE ---
-  // If a permission is required and the user lacks it, redirect to unauthorized
+  // 4. Permission-Based Access Control
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return <Navigate to="/unauthorized" replace />;
   }

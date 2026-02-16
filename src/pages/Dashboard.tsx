@@ -3,7 +3,6 @@ import { Package, Clock, ShieldCheck, Navigation, Map as MapIcon } from 'lucide-
 import { Card, CardContent } from '../components/ui/card';
 import { useRealtimeMetrics } from '../hooks/useRealtimeMetrics';
 
-}
 // Enterprise Components
 import RoutePlanner from '@/components/RoutePlanner';
 import RealTimeMapView from '@/components/RealTimeMapView';
