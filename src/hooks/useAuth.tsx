@@ -1,5 +1,5 @@
 import { useEffect, useState, createContext, useContext, ReactNode, useCallback } from 'react';
-import { supabase } from '../lib/supabase'; // Relative path is safer for production
+import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext<any>(null);
@@ -23,9 +23,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profile) setRole(profile.role);
       }
     } catch (error) {
-      console.error("Auth initialization failed:", error);
+      console.error("Auth initialization error:", error);
     } finally {
-      setLoading(false); // ALWAYS release loading to prevent black screen
+      setLoading(false); // Prevents the app from being stuck in a loading state
     }
   }, []);
 
@@ -48,4 +48,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Fail-safe hook
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined || context === null) {
+    throw new Error("useAuth must be used within an AuthProvider. Check your main.tsx wrapper.");
+  }
+  return context;
+};

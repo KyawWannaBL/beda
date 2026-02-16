@@ -4,16 +4,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://www.googletagservices.com https://www.google.com https://www.googleadservices.com; connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://*.google.com https://*.clients6.google.com https://region1.google-analytics.com; img-src 'self' data: https://www.google-analytics.com https://www.googleadservices.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src 'self'; frame-src https://www.google.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'; form-action 'self';"
-        }
-      ]
-    }
   ]
 }

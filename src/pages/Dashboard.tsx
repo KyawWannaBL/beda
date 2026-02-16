@@ -3,7 +3,6 @@ import { Package, Clock, ShieldCheck, Navigation, Map as MapIcon } from 'lucide-
 import { Card, CardContent } from '../components/ui/card';
 import { useRealtimeMetrics } from '../hooks/useRealtimeMetrics';
 
-// Enterprise Components
 import RoutePlanner from '@/components/RoutePlanner';
 import RealTimeMapView from '@/components/RealTimeMapView';
 import AuditFeed from '@/components/AuditFeed';
@@ -12,11 +11,11 @@ import RevenueForecast from '@/components/RevenueForecast';
 
 export default function Dashboard() {
   const { pending, transitTime } = useRealtimeMetrics();
-  return <div className="text-white">Executive Dashboard</div>;
+  const [selectedCity, setSelectedCity] = useState('Yangon'); // Add missing state
 
+  // FIX: Remove the early "return" that was blocking the entire UI
   return (
     <div className="space-y-10 pb-20 max-w-[1650px] mx-auto animate-in fade-in duration-700">
-      {/* Executive Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -29,15 +28,12 @@ export default function Dashboard() {
             Britium <span className="text-luxury-gold">Executive</span>
           </h1>
         </div>
-        
-        {/* System Pulse Indicator */}
         <div className="luxury-glass px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
            <span className="text-[11px] font-mono text-white/60 uppercase tracking-widest">Backend Synchronized</span>
         </div>
       </header>
 
-      {/* Row 1: KPI Metrics (Live) & Revenue Forecast */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-1 space-y-6">
           <Card className="luxury-card border-none overflow-hidden group hover:border-luxury-gold/20 transition-all">
@@ -51,7 +47,6 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-
           <Card className="luxury-card border-none overflow-hidden group hover:border-emerald-500/20 transition-all">
             <CardContent className="p-8 flex items-center gap-6">
               <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-emerald-500/10 transition-all">
@@ -64,17 +59,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-        
-        <div className="xl:col-span-3">
-          <RevenueForecast />
-        </div>
+        <div className="xl:col-span-3"><RevenueForecast /></div>
       </div>
 
-      
-
-      {/* Row 2: Operations Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Command & Fleet */}
         <div className="lg:col-span-4 space-y-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2 px-2">
@@ -86,7 +74,6 @@ export default function Dashboard() {
           <FleetStatus />
         </div>
 
-        {/* Right Column: Visualization & Compliance */}
         <div className="lg:col-span-8 space-y-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
@@ -114,7 +101,6 @@ export default function Dashboard() {
               <RealTimeMapView city={selectedCity} />
             </div>
           </div>
-
           <AuditFeed />
         </div>
       </div>

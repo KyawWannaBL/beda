@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { enterpriseNav } from '@/config/navigation';
-import { LogOut, Menu, User, Users } from 'lucide-react'; // Added Users icon
+import { LogOut, Menu, User, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from './NotificationBell';
 
-// Mapping specific routes to permission codes
 const ROUTE_PERMISSIONS: Record<string, string> = {
   '/dashboard': 'dashboard.view',
   '/admin/users': 'users.manage',
@@ -21,21 +20,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, hasPermission } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Permission-driven filtering
+  // Consolidated Navigation Filtering
   const filteredNav = enterpriseNav.filter(item => {
     // 1. Check Feature Flags
-    const flagActive = item.featureFlag 
+    const isFlagEnabled = item.featureFlag 
       ? import.meta.env[item.featureFlag] === 'true' 
       : true;
 
-    if (!flagActive) return false;
+    if (!isFlagEnabled) return false;
 
     // 2. Check Permissions
     const requiredPermission = ROUTE_PERMISSIONS[item.href];
-    
-    // If we have a hardcoded APP_OWNER check for a route, we might want to skip it here 
-    // to avoid duplication, or strictly rely on the permission system.
-    // For now, we render the config-based items as usual.
     if (requiredPermission) {
       return hasPermission(requiredPermission);
     }
@@ -49,7 +44,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           />
@@ -73,7 +70,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="space-y-2">
-            {/* Standard Permission-based Nav Items */}
             {filteredNav.map((item) => (
               <NavLink
                 key={item.href}
@@ -86,12 +82,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     : "text-white/50 hover:text-white hover:bg-white/5"
                 )}
               >
-                <item.icon className={cn("h-5 w-5 transition-transform group-hover:scale-110")} />
+                <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
                 <span className="font-medium text-sm">{item.title}</span>
               </NavLink>
             ))}
 
-            {/* --- NEW: Dynamic APP_OWNER Exclusive Link --- */}
+            {/* APP_OWNER Exclusive Link */}
             {user?.role === "APP_OWNER" && (
               <NavLink
                 to="/admin/users"
@@ -103,15 +99,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     : "text-white/50 hover:text-white hover:bg-white/5"
                 )}
               >
-                <Users className={cn("h-5 w-5 transition-transform group-hover:scale-110")} />
+                <Users className="h-5 w-5 transition-transform group-hover:scale-110" />
                 <span className="font-medium text-sm">User Management</span>
               </NavLink>
             )}
-            {/* --------------------------------------------- */}
-
           </nav>
         </div>
 
+        {/* User Profile / Logout */}
         <div className="absolute bottom-0 w-full p-6 border-t border-white/5">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -135,7 +130,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
         <header className="h-20 luxury-glass border-b border-white/5 flex items-center justify-between px-8 z-30">
           <button className="md:hidden p-2 text-white" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-6 w-6" />
@@ -155,7 +149,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8 relative custom-scrollbar">
           {children}
         </main>
