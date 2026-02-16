@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -17,26 +17,40 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout, hasPermission } = useAuth();
+  const { user, role, logout, hasPermission } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Consolidated Navigation Filtering
-  const filteredNav = enterpriseNav.filter(item => {
-    // 1. Check Feature Flags
-    const isFlagEnabled = item.featureFlag 
-      ? import.meta.env[item.featureFlag] === 'true' 
-      : true;
+  /**
+   * Consolidated Navigation Filtering
+   * Safety Guard: Prevents Array.filter from running on undefined auth state.
+   */
+  const filteredNav = useMemo(() => {
+    // If auth data hasn't arrived yet, return empty to prevent 'i is not a function' crash.
+    if (!user || !role) return [];
 
-    if (!isFlagEnabled) return false;
+    return enterpriseNav.filter(item => {
+      // 1. Check Feature Flags from Environment
+      const isFlagEnabled = item.featureFlag 
+        ? import.meta.env[item.featureFlag] === 'true' 
+        : true;
 
-    // 2. Check Permissions
-    const requiredPermission = ROUTE_PERMISSIONS[item.href];
-    if (requiredPermission) {
-      return hasPermission(requiredPermission);
-    }
+      if (!isFlagEnabled) return false;
 
-    return true;
-  });
+      // 2. Role-Based Access Control (RBAC)
+      // Allows access if user has the role OR is the master APP_OWNER.
+      if (item.roles && !item.roles.includes(role as any) && role !== 'APP_OWNER') {
+        return false;
+      }
+
+      // 3. Permission-Based Access Control
+      const requiredPermission = ROUTE_PERMISSIONS[item.href];
+      if (requiredPermission) {
+        return typeof hasPermission === 'function' ? hasPermission(requiredPermission) : false;
+      }
+
+      return true;
+    });
+  }, [user, role, hasPermission]);
 
   return (
     <div className="flex h-screen bg-luxury-obsidian text-luxury-cream overflow-hidden">
@@ -53,7 +67,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar Navigation */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-72 luxury-glass border-r border-white/5 transition-transform duration-300 md:relative md:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -87,8 +101,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </NavLink>
             ))}
 
-            {/* APP_OWNER Exclusive Link */}
-            {user?.role === "APP_OWNER" && (
+            {/* APP_OWNER Exclusive User Management Link */}
+            {role === "APP_OWNER" && (
               <NavLink
                 to="/admin/users"
                 onClick={() => setSidebarOpen(false)}
@@ -106,7 +120,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        {/* User Profile / Logout */}
+        {/* User Profile / Logout Section */}
         <div className="absolute bottom-0 w-full p-6 border-t border-white/5">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -114,7 +128,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold truncate">{user?.full_name || 'User'}</p>
-              <p className="text-[10px] text-white/40 truncate">{user?.role || 'Guest'}</p>
+              <p className="text-[10px] text-white/40 truncate">{role || 'Guest'}</p>
             </div>
           </div>
           <Button 
@@ -128,7 +142,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Container */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-20 luxury-glass border-b border-white/5 flex items-center justify-between px-8 z-30">
           <button className="md:hidden p-2 text-white" onClick={() => setSidebarOpen(true)}>
