@@ -1,6 +1,14 @@
-// vite.config.ts
+import { defineConfig } from 'vite'; // This is the missing line
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
 export default defineConfig({
-  // ... existing config
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
     rollupOptions: {
       output: {
@@ -11,6 +19,6 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 1000, // Raises limit to 1MB to hide the warning
+    chunkSizeWarningLimit: 1000,
   },
 });
