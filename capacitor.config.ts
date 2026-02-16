@@ -1,12 +1,9 @@
-import { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.britium.express', // This is what was missing
-  appName: 'Britium Express',
-  webDir: 'dist',
-  server: {
-    androidScheme: 'https'
-  }
+  appId: 'com.britium.express',
+  appName: 'britiumexpress',
+  webDir: 'dist'
 };
 
 export default config;
