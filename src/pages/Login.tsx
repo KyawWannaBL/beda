@@ -17,8 +17,8 @@ export default function Login() {
     setError(null);
 
     try {
-      await login(email, password);
-      navigate('/dashboard'); // Successful login routes to the Dashboard
+      const { mustChangePassword } = await login(email, password);
+      navigate(mustChangePassword ? "/force-password-reset" : "/dashboard", { replace: true });
     } catch (err: any) {
       setError(err.message || 'Access Denied. Please check credentials.');
     } finally {

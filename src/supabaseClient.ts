@@ -1,6 +1,4 @@
-import { createClient } from '@supabase/supabase-backend-js';
+// Back-compat shim: some legacy modules import from "@/supabaseClient" or "../supabaseClient".
+// The canonical client lives in src/lib/supabase.ts.
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase } from "@/lib/supabase";
