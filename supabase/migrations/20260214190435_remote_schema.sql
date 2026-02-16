@@ -1,30 +1,154 @@
+
+-- ============================================================================
+-- Compatibility: ensure existing deployments have columns referenced later
+-- ============================================================================
+ALTER TABLE IF EXISTS public.shipments
+  ADD COLUMN IF NOT EXISTS assigned_rider_id uuid;
+
 drop extension if exists "pg_net";
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'app_role' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.app_role AS ENUM ('APP_OWNER', 'SUPER_ADMIN', 'OPERATIONS_ADMIN', 'FINANCE_ADMIN', 'HR_ADMIN', 'OPERATIONS_STAFF', 'FINANCE_STAFF', 'CUSTOMER_SERVICE', 'RIDER', 'DRIVER', 'HELPER', 'STAFF', 'MARKETING_ADMIN', 'CUSTOMER_SERVICE_ADMIN', 'FINANCE_USER', 'ANALYST', 'SUPERVISOR', 'WAREHOUSE_MANAGER', 'DATA_ENTRY', 'SUBSTATION_MANAGER', 'MARKETING', 'MERCHANT', 'CUSTOMER');
+  END IF;
+END $$;
 
-create type "public"."app_role" as enum ('APP_OWNER', 'SUPER_ADMIN', 'OPERATIONS_ADMIN', 'FINANCE_ADMIN', 'HR_ADMIN', 'OPERATIONS_STAFF', 'FINANCE_STAFF', 'CUSTOMER_SERVICE', 'RIDER', 'DRIVER', 'HELPER', 'STAFF', 'MARKETING_ADMIN', 'CUSTOMER_SERVICE_ADMIN', 'FINANCE_USER', 'ANALYST', 'SUPERVISOR', 'WAREHOUSE_MANAGER', 'DATA_ENTRY', 'SUBSTATION_MANAGER', 'MARKETING', 'MERCHANT', 'CUSTOMER');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'authority_level' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.authority_level AS ENUM ('L0', 'L1', 'L2', 'L3', 'L4', 'L5');
+  END IF;
+END $$;
 
-create type "public"."authority_level" as enum ('L0', 'L1', 'L2', 'L3', 'L4', 'L5');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'collection_type_enum' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.collection_type_enum AS ENUM ('COD', 'PREPAID');
+  END IF;
+END $$;
 
-create type "public"."collection_type_enum" as enum ('COD', 'PREPAID');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'data_scope' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.data_scope AS ENUM ('S1', 'S2', 'S3', 'S4', 'S5');
+  END IF;
+END $$;
 
-create type "public"."data_scope" as enum ('S1', 'S2', 'S3', 'S4', 'S5');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'delivery_status_enum' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.delivery_status_enum AS ENUM ('DELIVERED', 'RETURN', 'REJECT');
+  END IF;
+END $$;
 
-create type "public"."delivery_status_enum" as enum ('DELIVERED', 'RETURN', 'REJECT');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'delivery_type' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.delivery_type AS ENUM ('standard', 'express', 'same_day', 'next_day', 'scheduled');
+  END IF;
+END $$;
 
-create type "public"."delivery_type" as enum ('standard', 'express', 'same_day', 'next_day', 'scheduled');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'mfa_method' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.mfa_method AS ENUM ('SMS', 'EMAIL', 'TOTP', 'BACKUP_CODES');
+  END IF;
+END $$;
 
-create type "public"."mfa_method" as enum ('SMS', 'EMAIL', 'TOTP', 'BACKUP_CODES');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'payment_method_enum' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.payment_method_enum AS ENUM ('CASH', 'TRANSACTION');
+  END IF;
+END $$;
 
-create type "public"."payment_method_enum" as enum ('CASH', 'TRANSACTION');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'payment_status' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.payment_status AS ENUM ('pending', 'paid', 'partial', 'refunded', 'disputed');
+  END IF;
+END $$;
 
-create type "public"."payment_status" as enum ('pending', 'paid', 'partial', 'refunded', 'disputed');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'rider_remark_enum' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.rider_remark_enum AS ENUM ('DONE', 'RETURNED', 'REJECTED', 'DAMAGED', 'CUSTOMER_NOT_REACHABLE', 'WRONG_ADDRESS', 'RESCHEDULE', 'PARTIAL_PAYMENT', 'OTHER');
+  END IF;
+END $$;
 
-create type "public"."rider_remark_enum" as enum ('DONE', 'RETURNED', 'REJECTED', 'DAMAGED', 'CUSTOMER_NOT_REACHABLE', 'WRONG_ADDRESS', 'RESCHEDULE', 'PARTIAL_PAYMENT', 'OTHER');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'shipment_status' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.shipment_status AS ENUM ('pending', 'pickup_scheduled', 'picked_up', 'in_transit', 'arrived_at_hub', 'out_for_delivery', 'delivered', 'failed_delivery', 'returned', 'cancelled');
+  END IF;
+END $$;
 
-create type "public"."shipment_status" as enum ('pending', 'pickup_scheduled', 'picked_up', 'in_transit', 'arrived_at_hub', 'out_for_delivery', 'delivered', 'failed_delivery', 'returned', 'cancelled');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'user_role_type' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.user_role_type AS ENUM ('SYSTEM_ADMIN', 'MARKETING_MANAGER', 'MARKETING_EXECUTIVE', 'FINANCE_MANAGER', 'FINANCE_EXECUTIVE', 'CUSTOMER_SERVICE_MANAGER', 'CUSTOMER_SERVICE_AGENT', 'HR_MANAGER', 'HR_EXECUTIVE', 'OPERATIONS_MANAGER', 'DISPATCHER', 'DRIVER', 'MERCHANT_ADMIN', 'MERCHANT_USER', 'CUSTOMER');
+  END IF;
+END $$;
 
-create type "public"."user_role_type" as enum ('SYSTEM_ADMIN', 'MARKETING_MANAGER', 'MARKETING_EXECUTIVE', 'FINANCE_MANAGER', 'FINANCE_EXECUTIVE', 'CUSTOMER_SERVICE_MANAGER', 'CUSTOMER_SERVICE_AGENT', 'HR_MANAGER', 'HR_EXECUTIVE', 'OPERATIONS_MANAGER', 'DISPATCHER', 'DRIVER', 'MERCHANT_ADMIN', 'MERCHANT_USER', 'CUSTOMER');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'user_status' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.user_status AS ENUM ('active', 'inactive', 'suspended', 'pending_verification', 'password_reset_required');
+  END IF;
+END $$;
 
-create type "public"."user_status" as enum ('active', 'inactive', 'suspended', 'pending_verification', 'password_reset_required');
 
 drop trigger if exists "update_campaigns_updated_at" on "public"."marketing_campaigns_2026_02_11_14_10";
 
@@ -1021,11 +1145,17 @@ drop table "public"."user_sessions_2026_02_11_14_10";
 drop table "public"."users_2026_02_11_14_10";
 
 alter type "public"."user_role" rename to "user_role__old_version_to_be_dropped";
-
-create type "public"."user_role" as enum ('super_admin', 'admin', 'manager', 'sub_station_manager', 'supervisor', 'warehouse_staff', 'rider', 'merchant', 'vendor', 'accountant', 'customer', 'finance_manager');
-
-
-  create table "public"."admin_users_2026_02_04_16_00" (
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'user_role' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.user_role AS ENUM ('super_admin', 'admin', 'manager', 'sub_station_manager', 'supervisor', 'warehouse_staff', 'rider', 'merchant', 'vendor', 'accountant', 'customer', 'finance_manager');
+  END IF;
+END $$;
+CREATE TABLE IF NOT EXISTS "public"."admin_users_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "email" character varying(255) not null,
     "full_name" character varying(255) not null,
@@ -1042,9 +1172,7 @@ create type "public"."user_role" as enum ('super_admin', 'admin', 'manager', 'su
 
 
 alter table "public"."admin_users_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."audit_logs" (
+CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "action" character varying(100) not null,
@@ -1059,9 +1187,7 @@ alter table "public"."admin_users_2026_02_04_16_00" enable row level security;
 
 
 alter table "public"."audit_logs" enable row level security;
-
-
-  create table "public"."automated_reports" (
+CREATE TABLE IF NOT EXISTS "public"."automated_reports" (
     "id" uuid not null default gen_random_uuid(),
     "report_type" character varying(100) not null,
     "trigger_event" character varying(100) not null,
@@ -1078,9 +1204,7 @@ alter table "public"."audit_logs" enable row level security;
 
 
 alter table "public"."automated_reports" enable row level security;
-
-
-  create table "public"."branches" (
+CREATE TABLE IF NOT EXISTS "public"."branches" (
     "id" uuid not null default gen_random_uuid(),
     "name" text not null,
     "code" text not null,
@@ -1100,9 +1224,7 @@ alter table "public"."automated_reports" enable row level security;
 
 
 alter table "public"."branches" enable row level security;
-
-
-  create table "public"."broadcast_messages" (
+CREATE TABLE IF NOT EXISTS "public"."broadcast_messages" (
     "id" uuid not null default gen_random_uuid(),
     "message_title" character varying(200) not null,
     "message_content" text not null,
@@ -1118,10 +1240,7 @@ alter table "public"."branches" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."bulk_upload_items_2026_02_04_16_00" (
+CREATE TABLE IF NOT EXISTS "public"."bulk_upload_items_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "upload_id" uuid,
     "row_number" integer not null,
@@ -1141,9 +1260,7 @@ alter table "public"."branches" enable row level security;
 
 
 alter table "public"."bulk_upload_items_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."bulk_uploads_2026_02_04_16_00" (
+CREATE TABLE IF NOT EXISTS "public"."bulk_uploads_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "filename" character varying(255) not null,
     "total_rows" integer not null,
@@ -1158,9 +1275,7 @@ alter table "public"."bulk_upload_items_2026_02_04_16_00" enable row level secur
 
 
 alter table "public"."bulk_uploads_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."cash_advances" (
+CREATE TABLE IF NOT EXISTS "public"."cash_advances" (
     "id" uuid not null default gen_random_uuid(),
     "deliveryman_id" uuid not null,
     "amount" numeric(10,2) not null,
@@ -1180,10 +1295,7 @@ alter table "public"."bulk_uploads_2026_02_04_16_00" enable row level security;
     "repaid_amount" numeric(10,2) default 0,
     "purpose" text
       );
-
-
-
-  create table "public"."content_pages_2026_02_03_21_00" (
+CREATE TABLE IF NOT EXISTS "public"."content_pages_2026_02_03_21_00" (
     "id" uuid not null default gen_random_uuid(),
     "page_key" character varying(100) not null,
     "title" character varying(255) not null,
@@ -1196,9 +1308,7 @@ alter table "public"."bulk_uploads_2026_02_04_16_00" enable row level security;
 
 
 alter table "public"."content_pages_2026_02_03_21_00" enable row level security;
-
-
-  create table "public"."customer_acknowledgments_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."customer_acknowledgments_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "parcel_id" uuid,
     "acknowledgment_type" character varying(50) not null,
@@ -1220,9 +1330,7 @@ alter table "public"."content_pages_2026_02_03_21_00" enable row level security;
 
 
 alter table "public"."customer_acknowledgments_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."customer_service_interactions_2026_02_04_16_00" (
+CREATE TABLE IF NOT EXISTS "public"."customer_service_interactions_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "agent_id" uuid,
     "customer_id" uuid,
@@ -1243,9 +1351,7 @@ alter table "public"."customer_acknowledgments_2026_02_04_15_54" enable row leve
 
 
 alter table "public"."customer_service_interactions_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."customers" (
+CREATE TABLE IF NOT EXISTS "public"."customers" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "customer_code" text not null,
@@ -1264,9 +1370,7 @@ alter table "public"."customer_service_interactions_2026_02_04_16_00" enable row
 
 
 alter table "public"."customers" enable row level security;
-
-
-  create table "public"."deliveries" (
+CREATE TABLE IF NOT EXISTS "public"."deliveries" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now(),
@@ -1300,10 +1404,7 @@ CASE
     ELSE (0)::numeric
 END) stored
       );
-
-
-
-  create table "public"."delivery_routes" (
+CREATE TABLE IF NOT EXISTS "public"."delivery_routes" (
     "id" uuid not null default gen_random_uuid(),
     "route_name" text not null,
     "rider_id" uuid not null,
@@ -1324,9 +1425,7 @@ END) stored
 
 
 alter table "public"."delivery_routes" enable row level security;
-
-
-  create table "public"."delivery_ways" (
+CREATE TABLE IF NOT EXISTS "public"."delivery_ways" (
     "id" uuid not null default gen_random_uuid(),
     "tracking_number" character varying(50) not null,
     "status" character varying(20) default 'pending'::character varying,
@@ -1344,10 +1443,7 @@ alter table "public"."delivery_routes" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."deliverymen_be" (
+CREATE TABLE IF NOT EXISTS "public"."deliverymen_be" (
     "id" uuid not null default gen_random_uuid(),
     "employee_id" character varying(50) not null,
     "full_name" character varying(100) not null,
@@ -1373,10 +1469,7 @@ alter table "public"."delivery_routes" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."departments" (
+CREATE TABLE IF NOT EXISTS "public"."departments" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "name" character varying(100) not null,
     "description" text,
@@ -1389,9 +1482,7 @@ alter table "public"."delivery_routes" enable row level security;
 
 
 alter table "public"."departments" enable row level security;
-
-
-  create table "public"."digital_signatures" (
+CREATE TABLE IF NOT EXISTS "public"."digital_signatures" (
     "id" uuid not null default gen_random_uuid(),
     "shipment_id" uuid,
     "signature_data" text not null,
@@ -1410,9 +1501,7 @@ alter table "public"."departments" enable row level security;
 
 
 alter table "public"."digital_signatures" enable row level security;
-
-
-  create table "public"."driver_telemetry" (
+CREATE TABLE IF NOT EXISTS "public"."driver_telemetry" (
     "id" uuid not null default gen_random_uuid(),
     "driver_id" uuid,
     "location" point not null,
@@ -1429,9 +1518,7 @@ alter table "public"."digital_signatures" enable row level security;
 
 
 alter table "public"."driver_telemetry" enable row level security;
-
-
-  create table "public"."employees" (
+CREATE TABLE IF NOT EXISTS "public"."employees" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid,
     "employee_code" character varying(50) not null,
@@ -1448,9 +1535,7 @@ alter table "public"."driver_telemetry" enable row level security;
 
 
 alter table "public"."employees" enable row level security;
-
-
-  create table "public"."failed_deliveries" (
+CREATE TABLE IF NOT EXISTS "public"."failed_deliveries" (
     "id" uuid not null default gen_random_uuid(),
     "tracking_number" character varying(50) not null,
     "failure_reason" character varying(100) not null,
@@ -1462,10 +1547,7 @@ alter table "public"."employees" enable row level security;
     "resolved_date" timestamp with time zone,
     "created_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."faqs_2026_02_03_21_00" (
+CREATE TABLE IF NOT EXISTS "public"."faqs_2026_02_03_21_00" (
     "id" uuid not null default gen_random_uuid(),
     "question" text not null,
     "answer" text not null,
@@ -1478,9 +1560,7 @@ alter table "public"."employees" enable row level security;
 
 
 alter table "public"."faqs_2026_02_03_21_00" enable row level security;
-
-
-  create table "public"."financial_transactions" (
+CREATE TABLE IF NOT EXISTS "public"."financial_transactions" (
     "id" uuid not null default gen_random_uuid(),
     "transaction_id" text not null,
     "transaction_type" text not null,
@@ -1503,9 +1583,7 @@ alter table "public"."faqs_2026_02_03_21_00" enable row level security;
 
 
 alter table "public"."financial_transactions" enable row level security;
-
-
-  create table "public"."form_submissions" (
+CREATE TABLE IF NOT EXISTS "public"."form_submissions" (
     "id" uuid not null default gen_random_uuid(),
     "form_type" character varying(100) not null,
     "form_data" jsonb not null,
@@ -1515,10 +1593,7 @@ alter table "public"."financial_transactions" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."fuel_anomalies" (
+CREATE TABLE IF NOT EXISTS "public"."fuel_anomalies" (
     "id" uuid not null default gen_random_uuid(),
     "vehicle_id" text not null,
     "driver_id" uuid not null,
@@ -1536,9 +1611,7 @@ alter table "public"."financial_transactions" enable row level security;
 
 
 alter table "public"."fuel_anomalies" enable row level security;
-
-
-  create table "public"."group_shipments" (
+CREATE TABLE IF NOT EXISTS "public"."group_shipments" (
     "id" uuid not null default gen_random_uuid(),
     "group_shipment_id" text not null,
     "shipment_date" date not null,
@@ -1547,10 +1620,7 @@ alter table "public"."fuel_anomalies" enable row level security;
     "helper_name" text,
     "rider_name" text
       );
-
-
-
-  create table "public"."invoices" (
+CREATE TABLE IF NOT EXISTS "public"."invoices" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "invoice_number" character varying(50) not null,
     "customer_name" character varying(255) not null,
@@ -1567,9 +1637,7 @@ alter table "public"."fuel_anomalies" enable row level security;
 
 
 alter table "public"."invoices" enable row level security;
-
-
-  create table "public"."marketer_performance_2026_02_04_16_00" (
+CREATE TABLE IF NOT EXISTS "public"."marketer_performance_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "marketer_id" uuid,
     "month_year" date not null,
@@ -1584,9 +1652,7 @@ alter table "public"."invoices" enable row level security;
 
 
 alter table "public"."marketer_performance_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."marketing_campaigns" (
+CREATE TABLE IF NOT EXISTS "public"."marketing_campaigns" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "name" character varying(255) not null,
     "description" text,
@@ -1603,9 +1669,7 @@ alter table "public"."marketer_performance_2026_02_04_16_00" enable row level se
 
 
 alter table "public"."marketing_campaigns" enable row level security;
-
-
-  create table "public"."merchant_bank_accounts" (
+CREATE TABLE IF NOT EXISTS "public"."merchant_bank_accounts" (
     "id" uuid not null default gen_random_uuid(),
     "merchant_id" uuid not null,
     "bank_name" character varying(100) not null,
@@ -1618,10 +1682,7 @@ alter table "public"."marketing_campaigns" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."merchant_receipts" (
+CREATE TABLE IF NOT EXISTS "public"."merchant_receipts" (
     "id" uuid not null default gen_random_uuid(),
     "merchant_id" uuid not null,
     "receipt_number" character varying(50) not null,
@@ -1636,10 +1697,7 @@ alter table "public"."marketing_campaigns" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."merchants" (
+CREATE TABLE IF NOT EXISTS "public"."merchants" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "merchant_code" text not null,
@@ -1671,9 +1729,7 @@ alter table "public"."marketing_campaigns" enable row level security;
 
 
 alter table "public"."merchants" enable row level security;
-
-
-  create table "public"."merchants_be" (
+CREATE TABLE IF NOT EXISTS "public"."merchants_be" (
     "id" uuid not null default gen_random_uuid(),
     "business_name" character varying(200) not null,
     "business_type" character varying(100),
@@ -1695,10 +1751,7 @@ alter table "public"."merchants" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."mfa_tokens" (
+CREATE TABLE IF NOT EXISTS "public"."mfa_tokens" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid,
     "method" public.mfa_method not null,
@@ -1712,9 +1765,7 @@ alter table "public"."merchants" enable row level security;
 
 
 alter table "public"."mfa_tokens" enable row level security;
-
-
-  create table "public"."notifications" (
+CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid,
     "title" character varying(255) not null,
@@ -1726,9 +1777,7 @@ alter table "public"."mfa_tokens" enable row level security;
 
 
 alter table "public"."notifications" enable row level security;
-
-
-  create table "public"."orders" (
+CREATE TABLE IF NOT EXISTS "public"."orders" (
     "id" uuid not null default gen_random_uuid(),
     "order_number" text default ('ORD-'::text || upper(SUBSTRING((gen_random_uuid())::text FROM 1 FOR 8))),
     "customer_name" text not null,
@@ -1748,9 +1797,7 @@ alter table "public"."notifications" enable row level security;
 
 
 alter table "public"."orders" enable row level security;
-
-
-  create table "public"."parcels" (
+CREATE TABLE IF NOT EXISTS "public"."parcels" (
     "id" uuid not null default gen_random_uuid(),
     "awb" text,
     "merchant_id" uuid,
@@ -1763,9 +1810,7 @@ alter table "public"."orders" enable row level security;
 
 
 alter table "public"."parcels" enable row level security;
-
-
-  create table "public"."password_changes" (
+CREATE TABLE IF NOT EXISTS "public"."password_changes" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "old_password_hash" character varying(255),
@@ -1777,9 +1822,7 @@ alter table "public"."parcels" enable row level security;
 
 
 alter table "public"."password_changes" enable row level security;
-
-
-  create table "public"."permissions" (
+CREATE TABLE IF NOT EXISTS "public"."permissions" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "name" character varying(100) not null,
     "description" text,
@@ -1790,9 +1833,7 @@ alter table "public"."password_changes" enable row level security;
 
 
 alter table "public"."permissions" enable row level security;
-
-
-  create table "public"."pricing_2026_02_03_21_00" (
+CREATE TABLE IF NOT EXISTS "public"."pricing_2026_02_03_21_00" (
     "id" uuid not null default gen_random_uuid(),
     "service_type" character varying(100) not null,
     "region" character varying(100) not null,
@@ -1808,9 +1849,7 @@ alter table "public"."permissions" enable row level security;
 
 
 alter table "public"."pricing_2026_02_03_21_00" enable row level security;
-
-
-  create table "public"."pricing_rules" (
+CREATE TABLE IF NOT EXISTS "public"."pricing_rules" (
     "id" uuid not null default gen_random_uuid(),
     "rule_name" text not null,
     "from_city" text not null,
@@ -1833,9 +1872,7 @@ alter table "public"."pricing_2026_02_03_21_00" enable row level security;
 
 
 alter table "public"."pricing_rules" enable row level security;
-
-
-  create table "public"."profiles" (
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "id" uuid not null,
     "role" public.app_role not null default 'STAFF'::public.app_role,
     "position" text,
@@ -1846,10 +1883,7 @@ alter table "public"."pricing_rules" enable row level security;
     "full_name" text,
     "email" text
       );
-
-
-
-  create table "public"."prohibited_items_2026_02_03_21_00" (
+CREATE TABLE IF NOT EXISTS "public"."prohibited_items_2026_02_03_21_00" (
     "id" uuid not null default gen_random_uuid(),
     "item_name" character varying(255) not null,
     "description" text,
@@ -1862,9 +1896,7 @@ alter table "public"."pricing_rules" enable row level security;
 
 
 alter table "public"."prohibited_items_2026_02_03_21_00" enable row level security;
-
-
-  create table "public"."qr_codes_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."qr_codes_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "qr_code" character varying(100) not null,
     "qr_type" character varying(50) not null,
@@ -1882,9 +1914,7 @@ alter table "public"."prohibited_items_2026_02_03_21_00" enable row level securi
 
 
 alter table "public"."qr_codes_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."return_shipments" (
+CREATE TABLE IF NOT EXISTS "public"."return_shipments" (
     "id" uuid not null default gen_random_uuid(),
     "original_tracking_number" character varying(50) not null,
     "return_reason" character varying(100) not null,
@@ -1896,10 +1926,7 @@ alter table "public"."qr_codes_2026_02_04_15_54" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."rider_locations_2026_02_04_14_23" (
+CREATE TABLE IF NOT EXISTS "public"."rider_locations_2026_02_04_14_23" (
     "id" uuid not null default gen_random_uuid(),
     "rider_id" uuid,
     "latitude" numeric(10,8) not null,
@@ -1914,9 +1941,7 @@ alter table "public"."qr_codes_2026_02_04_15_54" enable row level security;
 
 
 alter table "public"."rider_locations_2026_02_04_14_23" enable row level security;
-
-
-  create table "public"."rider_notifications_2026_02_04_14_23" (
+CREATE TABLE IF NOT EXISTS "public"."rider_notifications_2026_02_04_14_23" (
     "id" uuid not null default gen_random_uuid(),
     "rider_id" uuid,
     "title" character varying(200) not null,
@@ -1929,9 +1954,7 @@ alter table "public"."rider_locations_2026_02_04_14_23" enable row level securit
 
 
 alter table "public"."rider_notifications_2026_02_04_14_23" enable row level security;
-
-
-  create table "public"."rider_tasks_2026_02_04_14_23" (
+CREATE TABLE IF NOT EXISTS "public"."rider_tasks_2026_02_04_14_23" (
     "id" uuid not null default gen_random_uuid(),
     "task_code" character varying(20) not null,
     "rider_id" uuid,
@@ -1959,10 +1982,7 @@ alter table "public"."rider_notifications_2026_02_04_14_23" enable row level sec
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."rider_transactions_2026_02_04_14_23" (
+CREATE TABLE IF NOT EXISTS "public"."rider_transactions_2026_02_04_14_23" (
     "id" uuid not null default gen_random_uuid(),
     "rider_id" uuid,
     "task_id" uuid,
@@ -1973,10 +1993,7 @@ alter table "public"."rider_notifications_2026_02_04_14_23" enable row level sec
     "status" character varying(20) default 'completed'::character varying,
     "created_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."riders_2026_02_04_14_23" (
+CREATE TABLE IF NOT EXISTS "public"."riders_2026_02_04_14_23" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "rider_code" character varying(20) not null,
@@ -2003,10 +2020,7 @@ alter table "public"."rider_notifications_2026_02_04_14_23" enable row level sec
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."role_permissions" (
+CREATE TABLE IF NOT EXISTS "public"."role_permissions" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "role" public.user_role_type not null,
     "permission_id" uuid,
@@ -2015,16 +2029,11 @@ alter table "public"."rider_notifications_2026_02_04_14_23" enable row level sec
 
 
 alter table "public"."role_permissions" enable row level security;
-
-
-  create table "public"."role_routes" (
+CREATE TABLE IF NOT EXISTS "public"."role_routes" (
     "role" public.app_role not null,
     "home_path" text not null
       );
-
-
-
-  create table "public"."route_optimization" (
+CREATE TABLE IF NOT EXISTS "public"."route_optimization" (
     "id" uuid not null default gen_random_uuid(),
     "driver_id" uuid,
     "optimization_date" date default CURRENT_DATE,
@@ -2042,9 +2051,7 @@ alter table "public"."role_permissions" enable row level security;
 
 
 alter table "public"."route_optimization" enable row level security;
-
-
-  create table "public"."route_shipments" (
+CREATE TABLE IF NOT EXISTS "public"."route_shipments" (
     "id" uuid not null default gen_random_uuid(),
     "route_id" uuid not null,
     "shipment_id" uuid not null,
@@ -2057,9 +2064,7 @@ alter table "public"."route_optimization" enable row level security;
 
 
 alter table "public"."route_shipments" enable row level security;
-
-
-  create table "public"."services_2026_02_03_21_00" (
+CREATE TABLE IF NOT EXISTS "public"."services_2026_02_03_21_00" (
     "id" uuid not null default gen_random_uuid(),
     "name" character varying(255) not null,
     "description" text,
@@ -2074,9 +2079,7 @@ alter table "public"."route_shipments" enable row level security;
 
 
 alter table "public"."services_2026_02_03_21_00" enable row level security;
-
-
-  create table "public"."shipment_tracking" (
+CREATE TABLE IF NOT EXISTS "public"."shipment_tracking" (
     "id" uuid not null default gen_random_uuid(),
     "shipment_id" uuid not null,
     "status" public.shipment_status not null,
@@ -2090,9 +2093,7 @@ alter table "public"."services_2026_02_03_21_00" enable row level security;
 
 
 alter table "public"."shipment_tracking" enable row level security;
-
-
-  create table "public"."shipment_tracking_enhanced" (
+CREATE TABLE IF NOT EXISTS "public"."shipment_tracking_enhanced" (
     "id" uuid not null default gen_random_uuid(),
     "tracking_number" character varying(50) not null,
     "package_id" character varying(50) not null,
@@ -2110,9 +2111,7 @@ alter table "public"."shipment_tracking" enable row level security;
 
 
 alter table "public"."shipment_tracking_enhanced" enable row level security;
-
-
-  create table "public"."shipments" (
+CREATE TABLE IF NOT EXISTS "public"."shipments" (
     "id" uuid not null default gen_random_uuid(),
     "way_id" text not null,
     "merchant_id" uuid not null,
@@ -2159,9 +2158,7 @@ alter table "public"."shipment_tracking_enhanced" enable row level security;
 
 
 alter table "public"."shipments" enable row level security;
-
-
-  create table "public"."support_tickets" (
+CREATE TABLE IF NOT EXISTS "public"."support_tickets" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "ticket_number" character varying(50) not null,
     "customer_name" character varying(255) not null,
@@ -2177,9 +2174,7 @@ alter table "public"."shipments" enable row level security;
 
 
 alter table "public"."support_tickets" enable row level security;
-
-
-  create table "public"."system_audit_log" (
+CREATE TABLE IF NOT EXISTS "public"."system_audit_log" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "action" character varying(100) not null,
@@ -2197,9 +2192,7 @@ alter table "public"."support_tickets" enable row level security;
 
 
 alter table "public"."system_audit_log" enable row level security;
-
-
-  create table "public"."system_config_2026_02_04_16_00" (
+CREATE TABLE IF NOT EXISTS "public"."system_config_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "config_key" character varying(100) not null,
     "config_value" jsonb not null,
@@ -2212,9 +2205,7 @@ alter table "public"."system_audit_log" enable row level security;
 
 
 alter table "public"."system_config_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."system_configuration" (
+CREATE TABLE IF NOT EXISTS "public"."system_configuration" (
     "id" uuid not null default gen_random_uuid(),
     "setting_key" character varying(100) not null,
     "setting_value" text not null,
@@ -2225,10 +2216,7 @@ alter table "public"."system_config_2026_02_04_16_00" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."system_settings" (
+CREATE TABLE IF NOT EXISTS "public"."system_settings" (
     "id" uuid not null default gen_random_uuid(),
     "setting_key" text not null,
     "setting_value" text not null,
@@ -2241,9 +2229,7 @@ alter table "public"."system_config_2026_02_04_16_00" enable row level security;
 
 
 alter table "public"."system_settings" enable row level security;
-
-
-  create table "public"."system_settings_be" (
+CREATE TABLE IF NOT EXISTS "public"."system_settings_be" (
     "id" uuid not null default gen_random_uuid(),
     "setting_category" character varying(50) not null,
     "setting_key" character varying(100) not null,
@@ -2254,10 +2240,7 @@ alter table "public"."system_settings" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."tariff_rates_2026_02_04_16_00" (
+CREATE TABLE IF NOT EXISTS "public"."tariff_rates_2026_02_04_16_00" (
     "id" uuid not null default gen_random_uuid(),
     "country" character varying(100) not null,
     "country_code" character varying(3),
@@ -2275,9 +2258,7 @@ alter table "public"."system_settings" enable row level security;
 
 
 alter table "public"."tariff_rates_2026_02_04_16_00" enable row level security;
-
-
-  create table "public"."user_branch_assignments" (
+CREATE TABLE IF NOT EXISTS "public"."user_branch_assignments" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "branch_id" uuid not null,
@@ -2288,9 +2269,7 @@ alter table "public"."tariff_rates_2026_02_04_16_00" enable row level security;
 
 
 alter table "public"."user_branch_assignments" enable row level security;
-
-
-  create table "public"."user_permissions" (
+CREATE TABLE IF NOT EXISTS "public"."user_permissions" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "module" character varying(100) not null,
@@ -2298,10 +2277,7 @@ alter table "public"."user_branch_assignments" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."user_profiles" (
+CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "email" character varying(255) not null,
@@ -2325,9 +2301,7 @@ alter table "public"."user_branch_assignments" enable row level security;
 
 
 alter table "public"."user_profiles" enable row level security;
-
-
-  create table "public"."user_sessions" (
+CREATE TABLE IF NOT EXISTS "public"."user_sessions" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "session_token" text not null,
@@ -2341,9 +2315,7 @@ alter table "public"."user_profiles" enable row level security;
 
 
 alter table "public"."user_sessions" enable row level security;
-
-
-  create table "public"."users" (
+CREATE TABLE IF NOT EXISTS "public"."users" (
     "id" uuid not null default gen_random_uuid(),
     "firebase_uid" text not null,
     "email" text not null,
@@ -2370,9 +2342,7 @@ alter table "public"."user_sessions" enable row level security;
 
 
 alter table "public"."users" enable row level security;
-
-
-  create table "public"."users_2026_02_12_13_00" (
+CREATE TABLE IF NOT EXISTS "public"."users_2026_02_12_13_00" (
     "email" text not null,
     "role" public.app_role not null,
     "full_name" text not null,
@@ -2382,10 +2352,7 @@ alter table "public"."users" enable row level security;
     "is_active" boolean not null default true,
     "created_at" timestamp with time zone not null default now()
       );
-
-
-
-  create table "public"."users_enhanced" (
+CREATE TABLE IF NOT EXISTS "public"."users_enhanced" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "auth_user_id" uuid,
     "employee_id" character varying(50),
@@ -2414,9 +2381,7 @@ alter table "public"."users" enable row level security;
 
 
 alter table "public"."users_enhanced" enable row level security;
-
-
-  create table "public"."vouchers" (
+CREATE TABLE IF NOT EXISTS "public"."vouchers" (
     "id" uuid not null default gen_random_uuid(),
     "voucher_number" character varying(50) not null,
     "voucher_type" character varying(50) not null,
@@ -2431,10 +2396,7 @@ alter table "public"."users_enhanced" enable row level security;
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
       );
-
-
-
-  create table "public"."warehouse_manifest_items_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."warehouse_manifest_items_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "manifest_id" uuid,
     "parcel_id" uuid,
@@ -2446,9 +2408,7 @@ alter table "public"."users_enhanced" enable row level security;
 
 
 alter table "public"."warehouse_manifest_items_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."warehouse_manifests_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."warehouse_manifests_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "manifest_number" character varying(50) not null,
     "manifest_type" character varying(20) not null,
@@ -2474,9 +2434,7 @@ alter table "public"."warehouse_manifest_items_2026_02_04_15_54" enable row leve
 
 
 alter table "public"."warehouse_manifests_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."warehouse_operations_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."warehouse_operations_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "operation_type" character varying(50) not null,
     "parcel_id" uuid,
@@ -2501,9 +2459,7 @@ alter table "public"."warehouse_manifests_2026_02_04_15_54" enable row level sec
 
 
 alter table "public"."warehouse_operations_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."warehouse_parcels_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."warehouse_parcels_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "tracking_number" character varying(50) not null,
     "qr_code" character varying(100) not null,
@@ -2538,9 +2494,7 @@ alter table "public"."warehouse_operations_2026_02_04_15_54" enable row level se
 
 
 alter table "public"."warehouse_parcels_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."warehouse_stations_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."warehouse_stations_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "station_code" character varying(20) not null,
     "station_name" character varying(100) not null,
@@ -2557,9 +2511,7 @@ alter table "public"."warehouse_parcels_2026_02_04_15_54" enable row level secur
 
 
 alter table "public"."warehouse_stations_2026_02_04_15_54" enable row level security;
-
-
-  create table "public"."warehouse_users_2026_02_04_15_54" (
+CREATE TABLE IF NOT EXISTS "public"."warehouse_users_2026_02_04_15_54" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "employee_code" character varying(20) not null,
@@ -2579,440 +2531,267 @@ alter table "public"."warehouse_stations_2026_02_04_15_54" enable row level secu
 alter table "public"."warehouse_users_2026_02_04_15_54" enable row level security;
 
 drop type "public"."user_role__old_version_to_be_dropped";
-
-CREATE UNIQUE INDEX admin_users_2026_02_04_16_00_email_key ON public.admin_users_2026_02_04_16_00 USING btree (email);
-
-CREATE UNIQUE INDEX admin_users_2026_02_04_16_00_pkey ON public.admin_users_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id);
-
-CREATE UNIQUE INDEX automated_reports_pkey ON public.automated_reports USING btree (id);
-
-CREATE UNIQUE INDEX branches_code_key ON public.branches USING btree (code);
-
-CREATE UNIQUE INDEX branches_pkey ON public.branches USING btree (id);
-
-CREATE UNIQUE INDEX broadcast_messages_pkey ON public.broadcast_messages USING btree (id);
-
-CREATE UNIQUE INDEX bulk_upload_items_2026_02_04_16_00_pkey ON public.bulk_upload_items_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX bulk_uploads_2026_02_04_16_00_pkey ON public.bulk_uploads_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX cash_advances_pkey ON public.cash_advances USING btree (id);
-
-CREATE UNIQUE INDEX content_pages_2026_02_03_21_00_page_key_key ON public.content_pages_2026_02_03_21_00 USING btree (page_key);
-
-CREATE UNIQUE INDEX content_pages_2026_02_03_21_00_pkey ON public.content_pages_2026_02_03_21_00 USING btree (id);
-
-CREATE UNIQUE INDEX customer_acknowledgments_2026_02_04_15_54_pkey ON public.customer_acknowledgments_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX customer_service_interactions_2026_02_04_16_00_pkey ON public.customer_service_interactions_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX customers_customer_code_key ON public.customers USING btree (customer_code);
-
-CREATE UNIQUE INDEX customers_pkey ON public.customers USING btree (id);
-
-CREATE UNIQUE INDEX deliveries_pkey ON public.deliveries USING btree (id);
-
-CREATE UNIQUE INDEX delivery_routes_pkey ON public.delivery_routes USING btree (id);
-
-CREATE UNIQUE INDEX delivery_ways_pkey ON public.delivery_ways USING btree (id);
-
-CREATE UNIQUE INDEX delivery_ways_tracking_number_key ON public.delivery_ways USING btree (tracking_number);
-
-CREATE UNIQUE INDEX deliverymen_be_employee_id_key ON public.deliverymen_be USING btree (employee_id);
-
-CREATE UNIQUE INDEX deliverymen_be_pkey ON public.deliverymen_be USING btree (id);
-
-CREATE UNIQUE INDEX departments_name_key ON public.departments USING btree (name);
-
-CREATE UNIQUE INDEX departments_pkey ON public.departments USING btree (id);
-
-CREATE UNIQUE INDEX digital_signatures_pkey ON public.digital_signatures USING btree (id);
-
-CREATE UNIQUE INDEX driver_telemetry_pkey ON public.driver_telemetry USING btree (id);
-
-CREATE UNIQUE INDEX employees_employee_code_key ON public.employees USING btree (employee_code);
-
-CREATE UNIQUE INDEX employees_pkey ON public.employees USING btree (id);
-
-CREATE UNIQUE INDEX failed_deliveries_pkey ON public.failed_deliveries USING btree (id);
-
-CREATE UNIQUE INDEX faqs_2026_02_03_21_00_pkey ON public.faqs_2026_02_03_21_00 USING btree (id);
-
-CREATE UNIQUE INDEX financial_transactions_pkey ON public.financial_transactions USING btree (id);
-
-CREATE UNIQUE INDEX financial_transactions_transaction_id_key ON public.financial_transactions USING btree (transaction_id);
-
-CREATE UNIQUE INDEX form_submissions_pkey ON public.form_submissions USING btree (id);
-
-CREATE UNIQUE INDEX fuel_anomalies_pkey ON public.fuel_anomalies USING btree (id);
-
-CREATE UNIQUE INDEX group_shipments_group_shipment_id_key ON public.group_shipments USING btree (group_shipment_id);
-
-CREATE UNIQUE INDEX group_shipments_pkey ON public.group_shipments USING btree (id);
-
-CREATE INDEX idx_admin_users_email ON public.admin_users_2026_02_04_16_00 USING btree (email);
-
-CREATE INDEX idx_admin_users_role ON public.admin_users_2026_02_04_16_00 USING btree (role);
-
-CREATE INDEX idx_admin_users_status ON public.admin_users_2026_02_04_16_00 USING btree (status);
-
-CREATE INDEX idx_audit_log_user_time ON public.system_audit_log USING btree (user_id, "timestamp");
-
-CREATE INDEX idx_audit_logs_created_at ON public.audit_logs USING btree (created_at);
-
-CREATE INDEX idx_audit_logs_user_id ON public.audit_logs USING btree (user_id);
-
-CREATE INDEX idx_automated_reports_status ON public.automated_reports USING btree (generation_status);
-
-CREATE INDEX idx_branches_code ON public.branches USING btree (code);
-
-CREATE INDEX idx_broadcast_messages_status ON public.broadcast_messages USING btree (status);
-
-CREATE INDEX idx_bulk_uploads_status ON public.bulk_uploads_2026_02_04_16_00 USING btree (status);
-
-CREATE INDEX idx_content_pages_key ON public.content_pages_2026_02_03_21_00 USING btree (page_key);
-
-CREATE INDEX idx_cs_interactions_agent ON public.customer_service_interactions_2026_02_04_16_00 USING btree (agent_id);
-
-CREATE INDEX idx_cs_interactions_status ON public.customer_service_interactions_2026_02_04_16_00 USING btree (status);
-
-CREATE INDEX idx_customers_customer_code ON public.customers USING btree (customer_code);
-
-CREATE INDEX idx_deliveries_group ON public.deliveries USING btree (group_shipment_id);
-
-CREATE INDEX idx_deliveries_rider ON public.deliveries USING btree (rider_name);
-
-CREATE INDEX idx_deliveries_status ON public.deliveries USING btree (delivery_status);
-
-CREATE INDEX idx_delivery_routes_date ON public.delivery_routes USING btree (route_date);
-
-CREATE INDEX idx_delivery_routes_rider_id ON public.delivery_routes USING btree (rider_id);
-
-CREATE INDEX idx_delivery_ways_status ON public.delivery_ways USING btree (status);
-
-CREATE INDEX idx_delivery_ways_tracking ON public.delivery_ways USING btree (tracking_number);
-
-CREATE INDEX idx_deliverymen_be_status ON public.deliverymen_be USING btree (employment_status);
-
-CREATE INDEX idx_digital_signatures_gps ON public.digital_signatures USING gist (gps_coordinates);
-
-CREATE INDEX idx_digital_signatures_shipment ON public.digital_signatures USING btree (shipment_id);
-
-CREATE INDEX idx_digital_signatures_timestamp ON public.digital_signatures USING btree (delivery_timestamp);
-
-CREATE INDEX idx_driver_telemetry_driver_time ON public.driver_telemetry USING btree (driver_id, "timestamp");
-
-CREATE INDEX idx_driver_telemetry_location ON public.driver_telemetry USING gist (location);
-
-CREATE INDEX idx_faqs_category ON public.faqs_2026_02_03_21_00 USING btree (category, sort_order);
-
-CREATE INDEX idx_financial_transactions_merchant ON public.financial_transactions USING btree (merchant_id);
-
-CREATE INDEX idx_financial_transactions_reference ON public.financial_transactions USING btree (reference_type, reference_id);
-
-CREATE INDEX idx_fuel_anomalies_created_at ON public.fuel_anomalies USING btree (created_at);
-
-CREATE INDEX idx_fuel_anomalies_driver ON public.fuel_anomalies USING btree (driver_id);
-
-CREATE INDEX idx_fuel_anomalies_status ON public.fuel_anomalies USING btree (status);
-
-CREATE INDEX idx_fuel_anomalies_vehicle ON public.fuel_anomalies USING btree (vehicle_id);
-
-CREATE INDEX idx_marketer_performance_date ON public.marketer_performance_2026_02_04_16_00 USING btree (month_year);
-
-CREATE INDEX idx_merchants_be_status ON public.merchants_be USING btree (status);
-
-CREATE INDEX idx_merchants_merchant_code ON public.merchants USING btree (merchant_code);
-
-CREATE INDEX idx_merchants_user_id ON public.merchants USING btree (user_id);
-
-CREATE INDEX idx_mfa_tokens_user_id ON public.mfa_tokens USING btree (user_id);
-
-CREATE INDEX idx_password_changes_user_id ON public.password_changes USING btree (user_id);
-
-CREATE INDEX idx_pricing_service_region ON public.pricing_2026_02_03_21_00 USING btree (service_type, region);
-
-CREATE INDEX idx_qr_codes_code ON public.qr_codes_2026_02_04_15_54 USING btree (qr_code);
-
-CREATE INDEX idx_qr_codes_reference ON public.qr_codes_2026_02_04_15_54 USING btree (reference_id, reference_table);
-
-CREATE INDEX idx_rider_locations_rider_id ON public.rider_locations_2026_02_04_14_23 USING btree (rider_id);
-
-CREATE INDEX idx_rider_notifications_rider_id ON public.rider_notifications_2026_02_04_14_23 USING btree (rider_id);
-
-CREATE INDEX idx_rider_tasks_rider_id ON public.rider_tasks_2026_02_04_14_23 USING btree (rider_id);
-
-CREATE INDEX idx_rider_tasks_status ON public.rider_tasks_2026_02_04_14_23 USING btree (status);
-
-CREATE INDEX idx_rider_tasks_type ON public.rider_tasks_2026_02_04_14_23 USING btree (type);
-
-CREATE INDEX idx_rider_transactions_rider_id ON public.rider_transactions_2026_02_04_14_23 USING btree (rider_id);
-
-CREATE INDEX idx_riders_rider_code ON public.riders_2026_02_04_14_23 USING btree (rider_code);
-
-CREATE INDEX idx_riders_status ON public.riders_2026_02_04_14_23 USING btree (status);
-
-CREATE INDEX idx_riders_user_id ON public.riders_2026_02_04_14_23 USING btree (user_id);
-
-CREATE INDEX idx_route_optimization_driver ON public.route_optimization USING btree (driver_id, optimization_date);
-
-CREATE INDEX idx_services_category ON public.services_2026_02_03_21_00 USING btree (category, sort_order);
-
-CREATE INDEX idx_shipment_tracking_created ON public.shipment_tracking_enhanced USING btree (created_at);
-
-CREATE INDEX idx_shipment_tracking_shipment_id ON public.shipment_tracking USING btree (shipment_id);
-
-CREATE INDEX idx_shipment_tracking_status ON public.shipment_tracking_enhanced USING btree (current_status);
-
-CREATE INDEX idx_shipment_tracking_timestamp ON public.shipment_tracking USING btree ("timestamp");
-
-CREATE INDEX idx_shipments_assigned_rider ON public.shipments USING btree (assigned_rider_id);
-
-CREATE INDEX idx_shipments_delivery_date ON public.shipments USING btree (delivery_date);
-
-CREATE INDEX idx_shipments_merchant_id ON public.shipments USING btree (merchant_id);
-
-CREATE INDEX idx_shipments_pickup_date ON public.shipments USING btree (pickup_date);
-
-CREATE INDEX idx_shipments_way_id ON public.shipments USING btree (way_id);
-
-CREATE INDEX idx_system_settings_key ON public.system_settings USING btree (setting_key);
-
-CREATE INDEX idx_tariff_rates_country ON public.tariff_rates_2026_02_04_16_00 USING btree (country);
-
-CREATE INDEX idx_user_branch_assignments_user_id ON public.user_branch_assignments USING btree (user_id);
-
-CREATE INDEX idx_user_profiles_branch ON public.user_profiles USING btree (branch_location);
-
-CREATE INDEX idx_user_profiles_email ON public.user_profiles USING btree (email);
-
-CREATE INDEX idx_user_profiles_employee_id ON public.user_profiles USING btree (employee_id);
-
-CREATE INDEX idx_user_profiles_first_login ON public.user_profiles USING btree (first_login);
-
-CREATE INDEX idx_user_profiles_password_change ON public.user_profiles USING btree (must_change_password);
-
-CREATE INDEX idx_user_profiles_role ON public.user_profiles USING btree (role);
-
-CREATE INDEX idx_user_profiles_status ON public.user_profiles USING btree (status);
-
-CREATE INDEX idx_user_sessions_active ON public.user_sessions USING btree (is_active);
-
-CREATE INDEX idx_user_sessions_token ON public.user_sessions USING btree (session_token);
-
-CREATE INDEX idx_user_sessions_user_id ON public.user_sessions USING btree (user_id);
-
-CREATE INDEX idx_users_enhanced_auth_user_id ON public.users_enhanced USING btree (auth_user_id);
-
-CREATE INDEX idx_users_enhanced_email ON public.users_enhanced USING btree (email);
-
-CREATE INDEX idx_users_enhanced_role ON public.users_enhanced USING btree (role);
-
-CREATE INDEX idx_users_firebase_uid ON public.users USING btree (firebase_uid);
-
-CREATE INDEX idx_users_status ON public.users USING btree (status);
-
-CREATE INDEX idx_warehouse_operations_created ON public.warehouse_operations_2026_02_04_15_54 USING btree (created_at);
-
-CREATE INDEX idx_warehouse_operations_parcel ON public.warehouse_operations_2026_02_04_15_54 USING btree (parcel_id);
-
-CREATE INDEX idx_warehouse_operations_type ON public.warehouse_operations_2026_02_04_15_54 USING btree (operation_type);
-
-CREATE INDEX idx_warehouse_parcels_qr ON public.warehouse_parcels_2026_02_04_15_54 USING btree (qr_code);
-
-CREATE INDEX idx_warehouse_parcels_station ON public.warehouse_parcels_2026_02_04_15_54 USING btree (current_station_id);
-
-CREATE INDEX idx_warehouse_parcels_status ON public.warehouse_parcels_2026_02_04_15_54 USING btree (status);
-
-CREATE INDEX idx_warehouse_parcels_tracking ON public.warehouse_parcels_2026_02_04_15_54 USING btree (tracking_number);
-
-CREATE UNIQUE INDEX invoices_invoice_number_key ON public.invoices USING btree (invoice_number);
-
-CREATE UNIQUE INDEX invoices_pkey ON public.invoices USING btree (id);
-
-CREATE UNIQUE INDEX marketer_performance_2026_02_04_16_00_pkey ON public.marketer_performance_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX marketer_performance_2026_02_04_16_0_marketer_id_month_year_key ON public.marketer_performance_2026_02_04_16_00 USING btree (marketer_id, month_year);
-
-CREATE UNIQUE INDEX marketing_campaigns_pkey ON public.marketing_campaigns USING btree (id);
-
-CREATE UNIQUE INDEX merchant_bank_accounts_pkey ON public.merchant_bank_accounts USING btree (id);
-
-CREATE UNIQUE INDEX merchant_receipts_pkey ON public.merchant_receipts USING btree (id);
-
-CREATE UNIQUE INDEX merchant_receipts_receipt_number_key ON public.merchant_receipts USING btree (receipt_number);
-
-CREATE UNIQUE INDEX merchants_be_pkey ON public.merchants_be USING btree (id);
-
-CREATE UNIQUE INDEX merchants_merchant_code_key ON public.merchants USING btree (merchant_code);
-
-CREATE UNIQUE INDEX merchants_pkey ON public.merchants USING btree (id);
-
-CREATE UNIQUE INDEX mfa_tokens_pkey ON public.mfa_tokens USING btree (id);
-
-CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id);
-
-CREATE UNIQUE INDEX orders_order_number_key ON public.orders USING btree (order_number);
-
-CREATE UNIQUE INDEX orders_pkey ON public.orders USING btree (id);
-
-CREATE UNIQUE INDEX parcels_awb_key ON public.parcels USING btree (awb);
-
-CREATE UNIQUE INDEX parcels_pkey ON public.parcels USING btree (id);
-
-CREATE UNIQUE INDEX password_changes_pkey ON public.password_changes USING btree (id);
-
-CREATE UNIQUE INDEX permissions_name_key ON public.permissions USING btree (name);
-
-CREATE UNIQUE INDEX permissions_pkey ON public.permissions USING btree (id);
-
-CREATE UNIQUE INDEX pricing_2026_02_03_21_00_pkey ON public.pricing_2026_02_03_21_00 USING btree (id);
-
-CREATE UNIQUE INDEX pricing_rules_pkey ON public.pricing_rules USING btree (id);
-
-CREATE UNIQUE INDEX profiles_email_unique ON public.profiles USING btree (email);
-
-CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);
-
-CREATE UNIQUE INDEX prohibited_items_2026_02_03_21_00_pkey ON public.prohibited_items_2026_02_03_21_00 USING btree (id);
-
-CREATE UNIQUE INDEX qr_codes_2026_02_04_15_54_pkey ON public.qr_codes_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX qr_codes_2026_02_04_15_54_qr_code_key ON public.qr_codes_2026_02_04_15_54 USING btree (qr_code);
-
-CREATE UNIQUE INDEX return_shipments_pkey ON public.return_shipments USING btree (id);
-
-CREATE UNIQUE INDEX rider_locations_2026_02_04_14_23_pkey ON public.rider_locations_2026_02_04_14_23 USING btree (id);
-
-CREATE UNIQUE INDEX rider_notifications_2026_02_04_14_23_pkey ON public.rider_notifications_2026_02_04_14_23 USING btree (id);
-
-CREATE UNIQUE INDEX rider_tasks_2026_02_04_14_23_pkey ON public.rider_tasks_2026_02_04_14_23 USING btree (id);
-
-CREATE UNIQUE INDEX rider_tasks_2026_02_04_14_23_task_code_key ON public.rider_tasks_2026_02_04_14_23 USING btree (task_code);
-
-CREATE UNIQUE INDEX rider_transactions_2026_02_04_14_23_pkey ON public.rider_transactions_2026_02_04_14_23 USING btree (id);
-
-CREATE UNIQUE INDEX riders_2026_02_04_14_23_pkey ON public.riders_2026_02_04_14_23 USING btree (id);
-
-CREATE UNIQUE INDEX riders_2026_02_04_14_23_rider_code_key ON public.riders_2026_02_04_14_23 USING btree (rider_code);
-
-CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree (id);
-
-CREATE UNIQUE INDEX role_permissions_role_permission_id_key ON public.role_permissions USING btree (role, permission_id);
-
-CREATE UNIQUE INDEX role_routes_pkey ON public.role_routes USING btree (role);
-
-CREATE UNIQUE INDEX route_optimization_pkey ON public.route_optimization USING btree (id);
-
-CREATE UNIQUE INDEX route_shipments_pkey ON public.route_shipments USING btree (id);
-
-CREATE UNIQUE INDEX route_shipments_route_id_shipment_id_key ON public.route_shipments USING btree (route_id, shipment_id);
-
-CREATE UNIQUE INDEX services_2026_02_03_21_00_pkey ON public.services_2026_02_03_21_00 USING btree (id);
-
-CREATE UNIQUE INDEX shipment_tracking_enhanced_pkey ON public.shipment_tracking_enhanced USING btree (id);
-
-CREATE UNIQUE INDEX shipment_tracking_enhanced_tracking_number_key ON public.shipment_tracking_enhanced USING btree (tracking_number);
-
-CREATE UNIQUE INDEX shipment_tracking_pkey ON public.shipment_tracking USING btree (id);
-
-CREATE UNIQUE INDEX shipments_pkey ON public.shipments USING btree (id);
-
-CREATE UNIQUE INDEX shipments_way_id_key ON public.shipments USING btree (way_id);
-
-CREATE UNIQUE INDEX support_tickets_pkey ON public.support_tickets USING btree (id);
-
-CREATE UNIQUE INDEX support_tickets_ticket_number_key ON public.support_tickets USING btree (ticket_number);
-
-CREATE UNIQUE INDEX system_audit_log_pkey ON public.system_audit_log USING btree (id);
-
-CREATE UNIQUE INDEX system_config_2026_02_04_16_00_config_key_key ON public.system_config_2026_02_04_16_00 USING btree (config_key);
-
-CREATE UNIQUE INDEX system_config_2026_02_04_16_00_pkey ON public.system_config_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX system_configuration_pkey ON public.system_configuration USING btree (id);
-
-CREATE UNIQUE INDEX system_configuration_setting_key_key ON public.system_configuration USING btree (setting_key);
-
-CREATE UNIQUE INDEX system_settings_be_pkey ON public.system_settings_be USING btree (id);
-
-CREATE UNIQUE INDEX system_settings_be_setting_category_setting_key_key ON public.system_settings_be USING btree (setting_category, setting_key);
-
-CREATE UNIQUE INDEX system_settings_pkey ON public.system_settings USING btree (id);
-
-CREATE UNIQUE INDEX system_settings_setting_key_key ON public.system_settings USING btree (setting_key);
-
-CREATE UNIQUE INDEX tariff_rates_2026_02_04_16_00_pkey ON public.tariff_rates_2026_02_04_16_00 USING btree (id);
-
-CREATE UNIQUE INDEX user_branch_assignments_pkey ON public.user_branch_assignments USING btree (id);
-
-CREATE UNIQUE INDEX user_branch_assignments_user_id_branch_id_key ON public.user_branch_assignments USING btree (user_id, branch_id);
-
-CREATE UNIQUE INDEX user_permissions_pkey ON public.user_permissions USING btree (id);
-
-CREATE UNIQUE INDEX user_profiles_email_key ON public.user_profiles USING btree (email);
-
-CREATE UNIQUE INDEX user_profiles_employee_id_key ON public.user_profiles USING btree (employee_id);
-
-CREATE UNIQUE INDEX user_profiles_pkey ON public.user_profiles USING btree (id);
-
-CREATE UNIQUE INDEX user_sessions_pkey ON public.user_sessions USING btree (id);
-
-CREATE UNIQUE INDEX users_2026_02_12_13_00_employee_id_key ON public.users_2026_02_12_13_00 USING btree (employee_id);
-
-CREATE UNIQUE INDEX users_2026_02_12_13_00_pkey ON public.users_2026_02_12_13_00 USING btree (email);
-
-CREATE INDEX users_2026_city_idx ON public.users_2026_02_12_13_00 USING btree (city);
-
-CREATE INDEX users_2026_role_idx ON public.users_2026_02_12_13_00 USING btree (role);
-
-CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email);
-
-CREATE UNIQUE INDEX users_enhanced_email_key ON public.users_enhanced USING btree (email);
-
-CREATE UNIQUE INDEX users_enhanced_employee_id_key ON public.users_enhanced USING btree (employee_id);
-
-CREATE UNIQUE INDEX users_enhanced_pkey ON public.users_enhanced USING btree (id);
-
-CREATE UNIQUE INDEX users_firebase_uid_key ON public.users USING btree (firebase_uid);
-
-CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id);
-
-CREATE UNIQUE INDEX vouchers_pkey ON public.vouchers USING btree (id);
-
-CREATE UNIQUE INDEX vouchers_voucher_number_key ON public.vouchers USING btree (voucher_number);
-
-CREATE UNIQUE INDEX warehouse_manifest_items_2026_02_04_15_54_pkey ON public.warehouse_manifest_items_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX warehouse_manifests_2026_02_04_15_54_manifest_number_key ON public.warehouse_manifests_2026_02_04_15_54 USING btree (manifest_number);
-
-CREATE UNIQUE INDEX warehouse_manifests_2026_02_04_15_54_manifest_qr_code_key ON public.warehouse_manifests_2026_02_04_15_54 USING btree (manifest_qr_code);
-
-CREATE UNIQUE INDEX warehouse_manifests_2026_02_04_15_54_pkey ON public.warehouse_manifests_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX warehouse_operations_2026_02_04_15_54_pkey ON public.warehouse_operations_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX warehouse_parcels_2026_02_04_15_54_pkey ON public.warehouse_parcels_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX warehouse_parcels_2026_02_04_15_54_qr_code_key ON public.warehouse_parcels_2026_02_04_15_54 USING btree (qr_code);
-
-CREATE UNIQUE INDEX warehouse_parcels_2026_02_04_15_54_tracking_number_key ON public.warehouse_parcels_2026_02_04_15_54 USING btree (tracking_number);
-
-CREATE UNIQUE INDEX warehouse_stations_2026_02_04_15_54_pkey ON public.warehouse_stations_2026_02_04_15_54 USING btree (id);
-
-CREATE UNIQUE INDEX warehouse_stations_2026_02_04_15_54_station_code_key ON public.warehouse_stations_2026_02_04_15_54 USING btree (station_code);
-
-CREATE UNIQUE INDEX warehouse_users_2026_02_04_15_54_employee_code_key ON public.warehouse_users_2026_02_04_15_54 USING btree (employee_code);
-
-CREATE UNIQUE INDEX warehouse_users_2026_02_04_15_54_pkey ON public.warehouse_users_2026_02_04_15_54 USING btree (id);
-
-CREATE INDEX idx_shipments_status ON public.shipments USING btree (status);
-
-CREATE INDEX idx_users_email ON public.users USING btree (email);
-
-CREATE INDEX idx_users_role ON public.users USING btree (role);
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_2026_02_04_16_00_email_key ON public.admin_users_2026_02_04_16_00 USING btree (email);
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_2026_02_04_16_00_pkey ON public.admin_users_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS audit_logs_pkey ON public.audit_logs USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS automated_reports_pkey ON public.automated_reports USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS branches_code_key ON public.branches USING btree (code);
+CREATE UNIQUE INDEX IF NOT EXISTS branches_pkey ON public.branches USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS broadcast_messages_pkey ON public.broadcast_messages USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS bulk_upload_items_2026_02_04_16_00_pkey ON public.bulk_upload_items_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS bulk_uploads_2026_02_04_16_00_pkey ON public.bulk_uploads_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS cash_advances_pkey ON public.cash_advances USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS content_pages_2026_02_03_21_00_page_key_key ON public.content_pages_2026_02_03_21_00 USING btree (page_key);
+CREATE UNIQUE INDEX IF NOT EXISTS content_pages_2026_02_03_21_00_pkey ON public.content_pages_2026_02_03_21_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS customer_acknowledgments_2026_02_04_15_54_pkey ON public.customer_acknowledgments_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS customer_service_interactions_2026_02_04_16_00_pkey ON public.customer_service_interactions_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS customers_customer_code_key ON public.customers USING btree (customer_code);
+CREATE UNIQUE INDEX IF NOT EXISTS customers_pkey ON public.customers USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS deliveries_pkey ON public.deliveries USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS delivery_routes_pkey ON public.delivery_routes USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS delivery_ways_pkey ON public.delivery_ways USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS delivery_ways_tracking_number_key ON public.delivery_ways USING btree (tracking_number);
+CREATE UNIQUE INDEX IF NOT EXISTS deliverymen_be_employee_id_key ON public.deliverymen_be USING btree (employee_id);
+CREATE UNIQUE INDEX IF NOT EXISTS deliverymen_be_pkey ON public.deliverymen_be USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS departments_name_key ON public.departments USING btree (name);
+CREATE UNIQUE INDEX IF NOT EXISTS departments_pkey ON public.departments USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS digital_signatures_pkey ON public.digital_signatures USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS driver_telemetry_pkey ON public.driver_telemetry USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS employees_employee_code_key ON public.employees USING btree (employee_code);
+CREATE UNIQUE INDEX IF NOT EXISTS employees_pkey ON public.employees USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS failed_deliveries_pkey ON public.failed_deliveries USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS faqs_2026_02_03_21_00_pkey ON public.faqs_2026_02_03_21_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS financial_transactions_pkey ON public.financial_transactions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS financial_transactions_transaction_id_key ON public.financial_transactions USING btree (transaction_id);
+CREATE UNIQUE INDEX IF NOT EXISTS form_submissions_pkey ON public.form_submissions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS fuel_anomalies_pkey ON public.fuel_anomalies USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS group_shipments_group_shipment_id_key ON public.group_shipments USING btree (group_shipment_id);
+CREATE UNIQUE INDEX IF NOT EXISTS group_shipments_pkey ON public.group_shipments USING btree (id);
+CREATE INDEX IF NOT EXISTS idx_admin_users_email ON public.admin_users_2026_02_04_16_00 USING btree (email);
+CREATE INDEX IF NOT EXISTS idx_admin_users_role ON public.admin_users_2026_02_04_16_00 USING btree (role);
+CREATE INDEX IF NOT EXISTS idx_admin_users_status ON public.admin_users_2026_02_04_16_00 USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user_time ON public.system_audit_log USING btree (user_id, "timestamp");
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs USING btree (created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON public.audit_logs USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_automated_reports_status ON public.automated_reports USING btree (generation_status);
+CREATE INDEX IF NOT EXISTS idx_branches_code ON public.branches USING btree (code);
+CREATE INDEX IF NOT EXISTS idx_broadcast_messages_status ON public.broadcast_messages USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_bulk_uploads_status ON public.bulk_uploads_2026_02_04_16_00 USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_content_pages_key ON public.content_pages_2026_02_03_21_00 USING btree (page_key);
+CREATE INDEX IF NOT EXISTS idx_cs_interactions_agent ON public.customer_service_interactions_2026_02_04_16_00 USING btree (agent_id);
+CREATE INDEX IF NOT EXISTS idx_cs_interactions_status ON public.customer_service_interactions_2026_02_04_16_00 USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_customers_customer_code ON public.customers USING btree (customer_code);
+CREATE INDEX IF NOT EXISTS idx_deliveries_group ON public.deliveries USING btree (group_shipment_id);
+CREATE INDEX IF NOT EXISTS idx_deliveries_rider ON public.deliveries USING btree (rider_name);
+CREATE INDEX IF NOT EXISTS idx_deliveries_status ON public.deliveries USING btree (delivery_status);
+CREATE INDEX IF NOT EXISTS idx_delivery_routes_date ON public.delivery_routes USING btree (route_date);
+CREATE INDEX IF NOT EXISTS idx_delivery_routes_rider_id ON public.delivery_routes USING btree (rider_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_ways_status ON public.delivery_ways USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_delivery_ways_tracking ON public.delivery_ways USING btree (tracking_number);
+CREATE INDEX IF NOT EXISTS idx_deliverymen_be_status ON public.deliverymen_be USING btree (employment_status);
+CREATE INDEX IF NOT EXISTS idx_digital_signatures_gps ON public.digital_signatures USING gist (gps_coordinates);
+CREATE INDEX IF NOT EXISTS idx_digital_signatures_shipment ON public.digital_signatures USING btree (shipment_id);
+CREATE INDEX IF NOT EXISTS idx_digital_signatures_timestamp ON public.digital_signatures USING btree (delivery_timestamp);
+CREATE INDEX IF NOT EXISTS idx_driver_telemetry_driver_time ON public.driver_telemetry USING btree (driver_id, "timestamp");
+CREATE INDEX IF NOT EXISTS idx_driver_telemetry_location ON public.driver_telemetry USING gist (location);
+CREATE INDEX IF NOT EXISTS idx_faqs_category ON public.faqs_2026_02_03_21_00 USING btree (category, sort_order);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_merchant ON public.financial_transactions USING btree (merchant_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_reference ON public.financial_transactions USING btree (reference_type, reference_id);
+CREATE INDEX IF NOT EXISTS idx_fuel_anomalies_created_at ON public.fuel_anomalies USING btree (created_at);
+CREATE INDEX IF NOT EXISTS idx_fuel_anomalies_driver ON public.fuel_anomalies USING btree (driver_id);
+CREATE INDEX IF NOT EXISTS idx_fuel_anomalies_status ON public.fuel_anomalies USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_fuel_anomalies_vehicle ON public.fuel_anomalies USING btree (vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_marketer_performance_date ON public.marketer_performance_2026_02_04_16_00 USING btree (month_year);
+CREATE INDEX IF NOT EXISTS idx_merchants_be_status ON public.merchants_be USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_merchants_merchant_code ON public.merchants USING btree (merchant_code);
+CREATE INDEX IF NOT EXISTS idx_merchants_user_id ON public.merchants USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_mfa_tokens_user_id ON public.mfa_tokens USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_password_changes_user_id ON public.password_changes USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_service_region ON public.pricing_2026_02_03_21_00 USING btree (service_type, region);
+CREATE INDEX IF NOT EXISTS idx_qr_codes_code ON public.qr_codes_2026_02_04_15_54 USING btree (qr_code);
+CREATE INDEX IF NOT EXISTS idx_qr_codes_reference ON public.qr_codes_2026_02_04_15_54 USING btree (reference_id, reference_table);
+CREATE INDEX IF NOT EXISTS idx_rider_locations_rider_id ON public.rider_locations_2026_02_04_14_23 USING btree (rider_id);
+CREATE INDEX IF NOT EXISTS idx_rider_notifications_rider_id ON public.rider_notifications_2026_02_04_14_23 USING btree (rider_id);
+CREATE INDEX IF NOT EXISTS idx_rider_tasks_rider_id ON public.rider_tasks_2026_02_04_14_23 USING btree (rider_id);
+CREATE INDEX IF NOT EXISTS idx_rider_tasks_status ON public.rider_tasks_2026_02_04_14_23 USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_rider_tasks_type ON public.rider_tasks_2026_02_04_14_23 USING btree (type);
+CREATE INDEX IF NOT EXISTS idx_rider_transactions_rider_id ON public.rider_transactions_2026_02_04_14_23 USING btree (rider_id);
+CREATE INDEX IF NOT EXISTS idx_riders_rider_code ON public.riders_2026_02_04_14_23 USING btree (rider_code);
+CREATE INDEX IF NOT EXISTS idx_riders_status ON public.riders_2026_02_04_14_23 USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_riders_user_id ON public.riders_2026_02_04_14_23 USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_route_optimization_driver ON public.route_optimization USING btree (driver_id, optimization_date);
+CREATE INDEX IF NOT EXISTS idx_services_category ON public.services_2026_02_03_21_00 USING btree (category, sort_order);
+CREATE INDEX IF NOT EXISTS idx_shipment_tracking_created ON public.shipment_tracking_enhanced USING btree (created_at);
+CREATE INDEX IF NOT EXISTS idx_shipment_tracking_shipment_id ON public.shipment_tracking USING btree (shipment_id);
+CREATE INDEX IF NOT EXISTS idx_shipment_tracking_status ON public.shipment_tracking_enhanced USING btree (current_status);
+CREATE INDEX IF NOT EXISTS idx_shipment_tracking_timestamp ON public.shipment_tracking USING btree ("timestamp");
+-- COMPAT: ensure shipments columns exist
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "id" uuid;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "way_id" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "merchant_id" uuid;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "sender_name" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "sender_phone" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "sender_address" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "sender_city" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "sender_state" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "receiver_name" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "receiver_phone" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "receiver_address" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "receiver_city" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "receiver_state" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "pickup_branch_id" uuid;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "delivery_branch_id" uuid;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "assigned_rider_id" uuid;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "package_description" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "package_weight" numeric(8,2);
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "package_dimensions" jsonb;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "package_value" numeric(12,2);
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "delivery_type" public.delivery_type;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "status" public.shipment_status;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "payment_method" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "payment_status" public.payment_status;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "delivery_fee" numeric(10,2);
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "cod_amount" numeric(12,2);
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "insurance_fee" numeric(10,2);
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "total_amount" numeric(12,2);
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "special_instructions" text;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "pickup_date" date;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "delivery_date" date;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "estimated_delivery" timestamp with time zone;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "actual_pickup_time" timestamp with time zone;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "actual_delivery_time" timestamp with time zone;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "delivery_attempts" integer;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "max_delivery_attempts" integer;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "priority_level" integer;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "is_fragile" boolean;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "requires_signature" boolean;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "created_at" timestamp with time zone;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "updated_at" timestamp with time zone;
+ALTER TABLE IF EXISTS public.shipments ADD COLUMN IF NOT EXISTS "created_by" uuid;
+
+CREATE INDEX IF NOT EXISTS idx_shipments_assigned_rider ON public.shipments USING btree (assigned_rider_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_delivery_date ON public.shipments USING btree (delivery_date);
+CREATE INDEX IF NOT EXISTS idx_shipments_merchant_id ON public.shipments USING btree (merchant_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_pickup_date ON public.shipments USING btree (pickup_date);
+CREATE INDEX IF NOT EXISTS idx_shipments_way_id ON public.shipments USING btree (way_id);
+CREATE INDEX IF NOT EXISTS idx_system_settings_key ON public.system_settings USING btree (setting_key);
+CREATE INDEX IF NOT EXISTS idx_tariff_rates_country ON public.tariff_rates_2026_02_04_16_00 USING btree (country);
+CREATE INDEX IF NOT EXISTS idx_user_branch_assignments_user_id ON public.user_branch_assignments USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_branch ON public.user_profiles USING btree (branch_location);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON public.user_profiles USING btree (email);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_employee_id ON public.user_profiles USING btree (employee_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_first_login ON public.user_profiles USING btree (first_login);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_password_change ON public.user_profiles USING btree (must_change_password);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON public.user_profiles USING btree (role);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_status ON public.user_profiles USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON public.user_sessions USING btree (is_active);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON public.user_sessions USING btree (session_token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON public.user_sessions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_users_enhanced_auth_user_id ON public.users_enhanced USING btree (auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_users_enhanced_email ON public.users_enhanced USING btree (email);
+CREATE INDEX IF NOT EXISTS idx_users_enhanced_role ON public.users_enhanced USING btree (role);
+CREATE INDEX IF NOT EXISTS idx_users_firebase_uid ON public.users USING btree (firebase_uid);
+CREATE INDEX IF NOT EXISTS idx_users_status ON public.users USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_warehouse_operations_created ON public.warehouse_operations_2026_02_04_15_54 USING btree (created_at);
+CREATE INDEX IF NOT EXISTS idx_warehouse_operations_parcel ON public.warehouse_operations_2026_02_04_15_54 USING btree (parcel_id);
+CREATE INDEX IF NOT EXISTS idx_warehouse_operations_type ON public.warehouse_operations_2026_02_04_15_54 USING btree (operation_type);
+CREATE INDEX IF NOT EXISTS idx_warehouse_parcels_qr ON public.warehouse_parcels_2026_02_04_15_54 USING btree (qr_code);
+CREATE INDEX IF NOT EXISTS idx_warehouse_parcels_station ON public.warehouse_parcels_2026_02_04_15_54 USING btree (current_station_id);
+CREATE INDEX IF NOT EXISTS idx_warehouse_parcels_status ON public.warehouse_parcels_2026_02_04_15_54 USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_warehouse_parcels_tracking ON public.warehouse_parcels_2026_02_04_15_54 USING btree (tracking_number);
+CREATE UNIQUE INDEX IF NOT EXISTS invoices_invoice_number_key ON public.invoices USING btree (invoice_number);
+CREATE UNIQUE INDEX IF NOT EXISTS invoices_pkey ON public.invoices USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS marketer_performance_2026_02_04_16_00_pkey ON public.marketer_performance_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS marketer_performance_2026_02_04_16_0_marketer_id_month_year_key ON public.marketer_performance_2026_02_04_16_00 USING btree (marketer_id, month_year);
+CREATE UNIQUE INDEX IF NOT EXISTS marketing_campaigns_pkey ON public.marketing_campaigns USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS merchant_bank_accounts_pkey ON public.merchant_bank_accounts USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS merchant_receipts_pkey ON public.merchant_receipts USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS merchant_receipts_receipt_number_key ON public.merchant_receipts USING btree (receipt_number);
+CREATE UNIQUE INDEX IF NOT EXISTS merchants_be_pkey ON public.merchants_be USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS merchants_merchant_code_key ON public.merchants USING btree (merchant_code);
+CREATE UNIQUE INDEX IF NOT EXISTS merchants_pkey ON public.merchants USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS mfa_tokens_pkey ON public.mfa_tokens USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS notifications_pkey ON public.notifications USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS orders_order_number_key ON public.orders USING btree (order_number);
+CREATE UNIQUE INDEX IF NOT EXISTS orders_pkey ON public.orders USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS parcels_awb_key ON public.parcels USING btree (awb);
+CREATE UNIQUE INDEX IF NOT EXISTS parcels_pkey ON public.parcels USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS password_changes_pkey ON public.password_changes USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS permissions_name_key ON public.permissions USING btree (name);
+CREATE UNIQUE INDEX IF NOT EXISTS permissions_pkey ON public.permissions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS pricing_2026_02_03_21_00_pkey ON public.pricing_2026_02_03_21_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS pricing_rules_pkey ON public.pricing_rules USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_email_unique ON public.profiles USING btree (email);
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_pkey ON public.profiles USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS prohibited_items_2026_02_03_21_00_pkey ON public.prohibited_items_2026_02_03_21_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS qr_codes_2026_02_04_15_54_pkey ON public.qr_codes_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS qr_codes_2026_02_04_15_54_qr_code_key ON public.qr_codes_2026_02_04_15_54 USING btree (qr_code);
+CREATE UNIQUE INDEX IF NOT EXISTS return_shipments_pkey ON public.return_shipments USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS rider_locations_2026_02_04_14_23_pkey ON public.rider_locations_2026_02_04_14_23 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS rider_notifications_2026_02_04_14_23_pkey ON public.rider_notifications_2026_02_04_14_23 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS rider_tasks_2026_02_04_14_23_pkey ON public.rider_tasks_2026_02_04_14_23 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS rider_tasks_2026_02_04_14_23_task_code_key ON public.rider_tasks_2026_02_04_14_23 USING btree (task_code);
+CREATE UNIQUE INDEX IF NOT EXISTS rider_transactions_2026_02_04_14_23_pkey ON public.rider_transactions_2026_02_04_14_23 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS riders_2026_02_04_14_23_pkey ON public.riders_2026_02_04_14_23 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS riders_2026_02_04_14_23_rider_code_key ON public.riders_2026_02_04_14_23 USING btree (rider_code);
+CREATE UNIQUE INDEX IF NOT EXISTS role_permissions_pkey ON public.role_permissions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS role_permissions_role_permission_id_key ON public.role_permissions USING btree (role, permission_id);
+CREATE UNIQUE INDEX IF NOT EXISTS role_routes_pkey ON public.role_routes USING btree (role);
+CREATE UNIQUE INDEX IF NOT EXISTS route_optimization_pkey ON public.route_optimization USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS route_shipments_pkey ON public.route_shipments USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS route_shipments_route_id_shipment_id_key ON public.route_shipments USING btree (route_id, shipment_id);
+CREATE UNIQUE INDEX IF NOT EXISTS services_2026_02_03_21_00_pkey ON public.services_2026_02_03_21_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS shipment_tracking_enhanced_pkey ON public.shipment_tracking_enhanced USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS shipment_tracking_enhanced_tracking_number_key ON public.shipment_tracking_enhanced USING btree (tracking_number);
+CREATE UNIQUE INDEX IF NOT EXISTS shipment_tracking_pkey ON public.shipment_tracking USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS shipments_pkey ON public.shipments USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS shipments_way_id_key ON public.shipments USING btree (way_id);
+CREATE UNIQUE INDEX IF NOT EXISTS support_tickets_pkey ON public.support_tickets USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS support_tickets_ticket_number_key ON public.support_tickets USING btree (ticket_number);
+CREATE UNIQUE INDEX IF NOT EXISTS system_audit_log_pkey ON public.system_audit_log USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS system_config_2026_02_04_16_00_config_key_key ON public.system_config_2026_02_04_16_00 USING btree (config_key);
+CREATE UNIQUE INDEX IF NOT EXISTS system_config_2026_02_04_16_00_pkey ON public.system_config_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS system_configuration_pkey ON public.system_configuration USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS system_configuration_setting_key_key ON public.system_configuration USING btree (setting_key);
+CREATE UNIQUE INDEX IF NOT EXISTS system_settings_be_pkey ON public.system_settings_be USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS system_settings_be_setting_category_setting_key_key ON public.system_settings_be USING btree (setting_category, setting_key);
+CREATE UNIQUE INDEX IF NOT EXISTS system_settings_pkey ON public.system_settings USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS system_settings_setting_key_key ON public.system_settings USING btree (setting_key);
+CREATE UNIQUE INDEX IF NOT EXISTS tariff_rates_2026_02_04_16_00_pkey ON public.tariff_rates_2026_02_04_16_00 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_branch_assignments_pkey ON public.user_branch_assignments USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_branch_assignments_user_id_branch_id_key ON public.user_branch_assignments USING btree (user_id, branch_id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_permissions_pkey ON public.user_permissions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_profiles_email_key ON public.user_profiles USING btree (email);
+CREATE UNIQUE INDEX IF NOT EXISTS user_profiles_employee_id_key ON public.user_profiles USING btree (employee_id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_profiles_pkey ON public.user_profiles USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS user_sessions_pkey ON public.user_sessions USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_2026_02_12_13_00_employee_id_key ON public.users_2026_02_12_13_00 USING btree (employee_id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_2026_02_12_13_00_pkey ON public.users_2026_02_12_13_00 USING btree (email);
+CREATE INDEX IF NOT EXISTS users_2026_city_idx ON public.users_2026_02_12_13_00 USING btree (city);
+CREATE INDEX IF NOT EXISTS users_2026_role_idx ON public.users_2026_02_12_13_00 USING btree (role);
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_key ON public.users USING btree (email);
+CREATE UNIQUE INDEX IF NOT EXISTS users_enhanced_email_key ON public.users_enhanced USING btree (email);
+CREATE UNIQUE INDEX IF NOT EXISTS users_enhanced_employee_id_key ON public.users_enhanced USING btree (employee_id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_enhanced_pkey ON public.users_enhanced USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_uid_key ON public.users USING btree (firebase_uid);
+CREATE UNIQUE INDEX IF NOT EXISTS users_pkey ON public.users USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS vouchers_pkey ON public.vouchers USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS vouchers_voucher_number_key ON public.vouchers USING btree (voucher_number);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_manifest_items_2026_02_04_15_54_pkey ON public.warehouse_manifest_items_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_manifests_2026_02_04_15_54_manifest_number_key ON public.warehouse_manifests_2026_02_04_15_54 USING btree (manifest_number);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_manifests_2026_02_04_15_54_manifest_qr_code_key ON public.warehouse_manifests_2026_02_04_15_54 USING btree (manifest_qr_code);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_manifests_2026_02_04_15_54_pkey ON public.warehouse_manifests_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_operations_2026_02_04_15_54_pkey ON public.warehouse_operations_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_parcels_2026_02_04_15_54_pkey ON public.warehouse_parcels_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_parcels_2026_02_04_15_54_qr_code_key ON public.warehouse_parcels_2026_02_04_15_54 USING btree (qr_code);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_parcels_2026_02_04_15_54_tracking_number_key ON public.warehouse_parcels_2026_02_04_15_54 USING btree (tracking_number);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_stations_2026_02_04_15_54_pkey ON public.warehouse_stations_2026_02_04_15_54 USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_stations_2026_02_04_15_54_station_code_key ON public.warehouse_stations_2026_02_04_15_54 USING btree (station_code);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_users_2026_02_04_15_54_employee_code_key ON public.warehouse_users_2026_02_04_15_54 USING btree (employee_code);
+CREATE UNIQUE INDEX IF NOT EXISTS warehouse_users_2026_02_04_15_54_pkey ON public.warehouse_users_2026_02_04_15_54 USING btree (id);
+CREATE INDEX IF NOT EXISTS idx_shipments_status ON public.shipments USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users USING btree (email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON public.users USING btree (role);
 
 alter table "public"."admin_users_2026_02_04_16_00" add constraint "admin_users_2026_02_04_16_00_pkey" PRIMARY KEY using index "admin_users_2026_02_04_16_00_pkey";
 

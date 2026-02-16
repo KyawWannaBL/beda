@@ -34,7 +34,7 @@ CREATE TYPE user_role AS ENUM (
 
 -- Users table with comprehensive profile data
 CREATE TABLE users_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
   username VARCHAR(100) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE users_2026_02_11_14_10 (
 
 -- User sessions for tracking active sessions
 CREATE TABLE user_sessions_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id) ON DELETE CASCADE,
   session_token TEXT UNIQUE NOT NULL,
   ip_address INET,
@@ -67,7 +67,7 @@ CREATE TABLE user_sessions_2026_02_11_14_10 (
 
 -- User activity logs for audit trail
 CREATE TABLE user_activity_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id) ON DELETE CASCADE,
   action VARCHAR(100) NOT NULL,
   resource_type VARCHAR(100),
@@ -84,7 +84,7 @@ CREATE TABLE user_activity_2026_02_11_14_10 (
 
 -- Tamper tags for secure parcel tracking
 CREATE TABLE tamper_tags_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tag_code VARCHAR(50) UNIQUE NOT NULL,
   batch_id VARCHAR(100),
   status VARCHAR(50) DEFAULT 'available',
@@ -97,7 +97,7 @@ CREATE TABLE tamper_tags_2026_02_11_14_10 (
 
 -- Shipments - core operational entity
 CREATE TABLE shipments_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   awb_number VARCHAR(100) UNIQUE NOT NULL,
   merchant_id UUID REFERENCES users_2026_02_11_14_10(id),
   customer_id UUID REFERENCES users_2026_02_11_14_10(id),
@@ -117,7 +117,7 @@ CREATE TABLE shipments_2026_02_11_14_10 (
 
 -- Shipment status history
 CREATE TABLE shipment_status_history_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shipment_id UUID NOT NULL REFERENCES shipments_2026_02_11_14_10(id) ON DELETE CASCADE,
   status VARCHAR(50) NOT NULL,
   location VARCHAR(255),
@@ -129,7 +129,7 @@ CREATE TABLE shipment_status_history_2026_02_11_14_10 (
 
 -- Pickup records
 CREATE TABLE pickup_records_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shipment_id UUID NOT NULL REFERENCES shipments_2026_02_11_14_10(id),
   rider_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id),
   pickup_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -141,7 +141,7 @@ CREATE TABLE pickup_records_2026_02_11_14_10 (
 
 -- Delivery records
 CREATE TABLE delivery_records_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shipment_id UUID NOT NULL REFERENCES shipments_2026_02_11_14_10(id),
   rider_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id),
   delivery_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -159,7 +159,7 @@ CREATE TABLE delivery_records_2026_02_11_14_10 (
 
 -- Financial transactions
 CREATE TABLE financial_transactions_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   transaction_type VARCHAR(50) NOT NULL,
   amount DECIMAL(12,2) NOT NULL,
   currency VARCHAR(3) DEFAULT 'USD',
@@ -177,7 +177,7 @@ CREATE TABLE financial_transactions_2026_02_11_14_10 (
 
 -- Commission calculations
 CREATE TABLE commissions_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id),
   period_start DATE NOT NULL,
   period_end DATE NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE commissions_2026_02_11_14_10 (
 
 -- Marketing campaigns
 CREATE TABLE marketing_campaigns_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   description TEXT,
   campaign_type VARCHAR(50) NOT NULL,
@@ -212,7 +212,7 @@ CREATE TABLE marketing_campaigns_2026_02_11_14_10 (
 
 -- Customer segments
 CREATE TABLE customer_segments_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   description TEXT,
   criteria JSONB NOT NULL,
@@ -227,7 +227,7 @@ CREATE TABLE customer_segments_2026_02_11_14_10 (
 
 -- Support tickets
 CREATE TABLE support_tickets_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_number VARCHAR(50) UNIQUE NOT NULL,
   customer_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id),
   assigned_to UUID REFERENCES users_2026_02_11_14_10(id),
@@ -244,7 +244,7 @@ CREATE TABLE support_tickets_2026_02_11_14_10 (
 
 -- Support ticket messages
 CREATE TABLE support_ticket_messages_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id UUID NOT NULL REFERENCES support_tickets_2026_02_11_14_10(id) ON DELETE CASCADE,
   sender_id UUID NOT NULL REFERENCES users_2026_02_11_14_10(id),
   message TEXT NOT NULL,
@@ -259,7 +259,7 @@ CREATE TABLE support_ticket_messages_2026_02_11_14_10 (
 
 -- KPI data storage
 CREATE TABLE kpi_data_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   metric_name VARCHAR(100) NOT NULL,
   metric_value DECIMAL(15,4) NOT NULL,
   metric_unit VARCHAR(50),
@@ -273,7 +273,7 @@ CREATE TABLE kpi_data_2026_02_11_14_10 (
 
 -- Generated reports
 CREATE TABLE reports_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   report_type VARCHAR(100) NOT NULL,
   parameters JSONB DEFAULT '{}',
@@ -291,7 +291,7 @@ CREATE TABLE reports_2026_02_11_14_10 (
 
 -- System settings
 CREATE TABLE system_settings_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   setting_key VARCHAR(100) UNIQUE NOT NULL,
   setting_value JSONB NOT NULL,
   description TEXT,
@@ -303,7 +303,7 @@ CREATE TABLE system_settings_2026_02_11_14_10 (
 
 -- Security events
 CREATE TABLE security_events_2026_02_11_14_10 (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type VARCHAR(100) NOT NULL,
   severity VARCHAR(20) DEFAULT 'medium',
   user_id UUID REFERENCES users_2026_02_11_14_10(id),
@@ -370,65 +370,65 @@ CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON system_settings_2026_
 -- Insert demo users with hashed passwords
 INSERT INTO users_2026_02_11_14_10 (email, username, password_hash, name, role, permissions) VALUES
 -- App Owner
-('appowner@tampersafe.com', 'appowner', crypt('owner@2026!', gen_salt('bf')), 'System Owner', 'APP_OWNER', 
+('appowner@tampersafe.com', 'appowner', extensions.crypt('owner@2026!', extensions.gen_salt('bf')), 'System Owner', 'APP_OWNER', 
  ARRAY['app:delete', 'users:manage', 'roles:assign', 'system:configure', 'data:export', 'audit:view', 'security:manage', 'billing:manage']),
 
 -- Super Admin
-('superadmin@tampersafe.com', 'superadmin', crypt('admin@2026!', gen_salt('bf')), 'Super Administrator', 'SUPER_ADMIN',
+('superadmin@tampersafe.com', 'superadmin', extensions.crypt('admin@2026!', extensions.gen_salt('bf')), 'Super Administrator', 'SUPER_ADMIN',
  ARRAY['users:manage', 'roles:assign', 'system:configure', 'audit:view', 'reports:generate', 'security:monitor', 'data:export']),
 
 -- Finance Admin
-('financeadmin@tampersafe.com', 'financeadmin', crypt('finance@2026', gen_salt('bf')), 'Finance Administrator', 'FINANCE_ADMIN',
+('financeadmin@tampersafe.com', 'financeadmin', extensions.crypt('finance@2026', extensions.gen_salt('bf')), 'Finance Administrator', 'FINANCE_ADMIN',
  ARRAY['finance:manage', 'merchants:manage', 'payments:process', 'commissions:calculate', 'reports:financial', 'settlements:manage']),
 
 -- Operations Admin
-('opsadmin@tampersafe.com', 'opsadmin', crypt('ops@2026', gen_salt('bf')), 'Operations Administrator', 'OPERATIONS_ADMIN',
+('opsadmin@tampersafe.com', 'opsadmin', extensions.crypt('ops@2026', extensions.gen_salt('bf')), 'Operations Administrator', 'OPERATIONS_ADMIN',
  ARRAY['operations:manage', 'shipments:track', 'warehouse:manage', 'riders:assign', 'routes:optimize', 'inventory:manage']),
 
 -- Marketing Admin
-('marketingadmin@tampersafe.com', 'marketingadmin', crypt('marketing@2026', gen_salt('bf')), 'Marketing Administrator', 'MARKETING_ADMIN',
+('marketingadmin@tampersafe.com', 'marketingadmin', extensions.crypt('marketing@2026', extensions.gen_salt('bf')), 'Marketing Administrator', 'MARKETING_ADMIN',
  ARRAY['campaigns:manage', 'customers:segment', 'analytics:marketing', 'promotions:create', 'content:manage', 'social:manage']),
 
 -- Customer Service Admin
-('serviceadmin@tampersafe.com', 'serviceadmin', crypt('service@2026', gen_salt('bf')), 'Service Administrator', 'CUSTOMER_SERVICE_ADMIN',
+('serviceadmin@tampersafe.com', 'serviceadmin', extensions.crypt('service@2026', extensions.gen_salt('bf')), 'Service Administrator', 'CUSTOMER_SERVICE_ADMIN',
  ARRAY['support:manage', 'tickets:resolve', 'chat:moderate', 'customers:assist', 'escalations:handle', 'kb:manage']),
 
 -- Operational Staff
-('rider001@tampersafe.com', 'rider001', crypt('rider@2026', gen_salt('bf')), 'John Rider', 'RDR',
+('rider001@tampersafe.com', 'rider001', extensions.crypt('rider@2026', extensions.gen_salt('bf')), 'John Rider', 'RDR',
  ARRAY['pickups:create', 'deliveries:complete', 'photos:capture', 'signatures:collect']),
 
-('dataentry001@tampersafe.com', 'dataentry001', crypt('data@2026', gen_salt('bf')), 'Sarah Data', 'DES',
+('dataentry001@tampersafe.com', 'dataentry001', extensions.crypt('data@2026', extensions.gen_salt('bf')), 'Sarah Data', 'DES',
  ARRAY['shipments:register', 'data:entry', 'labels:print']),
 
-('warehouse001@tampersafe.com', 'warehouse001', crypt('warehouse@2026', gen_salt('bf')), 'Mike Warehouse', 'WH',
+('warehouse001@tampersafe.com', 'warehouse001', extensions.crypt('warehouse@2026', extensions.gen_salt('bf')), 'Mike Warehouse', 'WH',
  ARRAY['warehouse:receive', 'warehouse:dispatch', 'inventory:update']),
 
-('supervisor001@tampersafe.com', 'supervisor001', crypt('super@2026', gen_salt('bf')), 'Lisa Supervisor', 'SUP',
+('supervisor001@tampersafe.com', 'supervisor001', extensions.crypt('super@2026', extensions.gen_salt('bf')), 'Lisa Supervisor', 'SUP',
  ARRAY['operations:supervise', 'approvals:process', 'audits:conduct']),
 
-('substation001@tampersafe.com', 'substation001', crypt('station@2026', gen_salt('bf')), 'Tom Station', 'SSM',
+('substation001@tampersafe.com', 'substation001', extensions.crypt('station@2026', extensions.gen_salt('bf')), 'Tom Station', 'SSM',
  ARRAY['substation:manage', 'manifests:receive', 'riders:coordinate']),
 
-('lastmile001@tampersafe.com', 'lastmile001', crypt('lastmile@2026', gen_salt('bf')), 'Alex Delivery', 'SSR',
+('lastmile001@tampersafe.com', 'lastmile001', extensions.crypt('lastmile@2026', extensions.gen_salt('bf')), 'Alex Delivery', 'SSR',
  ARRAY['deliveries:execute', 'customers:contact', 'pods:capture']),
 
 -- Business Users
-('merchant001@tampersafe.com', 'merchant001', crypt('merchant@2026', gen_salt('bf')), 'Business Merchant', 'MERCHANT',
+('merchant001@tampersafe.com', 'merchant001', extensions.crypt('merchant@2026', extensions.gen_salt('bf')), 'Business Merchant', 'MERCHANT',
  ARRAY['shipments:create', 'analytics:view', 'billing:view', 'api:access']),
 
-('customer001@tampersafe.com', 'customer001', crypt('customer@2026', gen_salt('bf')), 'John Customer', 'CUSTOMER',
+('customer001@tampersafe.com', 'customer001', extensions.crypt('customer@2026', extensions.gen_salt('bf')), 'John Customer', 'CUSTOMER',
  ARRAY['shipments:track', 'support:contact', 'profile:manage']),
 
-('marketing001@tampersafe.com', 'marketing001', crypt('growth@2026', gen_salt('bf')), 'Marketing Manager', 'MARKETING',
+('marketing001@tampersafe.com', 'marketing001', extensions.crypt('growth@2026', extensions.gen_salt('bf')), 'Marketing Manager', 'MARKETING',
  ARRAY['campaigns:execute', 'analytics:view', 'content:create']),
 
-('support001@tampersafe.com', 'support001', crypt('support@2026', gen_salt('bf')), 'Support Agent', 'CUSTOMER_SERVICE',
+('support001@tampersafe.com', 'support001', extensions.crypt('support@2026', extensions.gen_salt('bf')), 'Support Agent', 'CUSTOMER_SERVICE',
  ARRAY['tickets:handle', 'chat:respond', 'customers:assist']),
 
-('finance001@tampersafe.com', 'finance001', crypt('finuser@2026', gen_salt('bf')), 'Finance User', 'FINANCE_USER',
+('finance001@tampersafe.com', 'finance001', extensions.crypt('finuser@2026', extensions.gen_salt('bf')), 'Finance User', 'FINANCE_USER',
  ARRAY['payments:process', 'reports:view', 'reconciliation:perform']),
 
-('analyst001@tampersafe.com', 'analyst001', crypt('analyst@2026', gen_salt('bf')), 'Business Analyst', 'ANALYST',
+('analyst001@tampersafe.com', 'analyst001', extensions.crypt('analyst@2026', extensions.gen_salt('bf')), 'Business Analyst', 'ANALYST',
  ARRAY['analytics:access', 'reports:generate', 'data:analyze']);
 
 -- Insert demo system settings
