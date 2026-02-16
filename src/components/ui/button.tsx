@@ -1,66 +1,45 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-import { useAuth } from "@/hooks/useAuth" // Import the auth hook
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
-import { cn } from "@/lib/utils"
+export default function EnterprisePortal() {
+  const navigate = useNavigate();
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-  requiredPermission?: string // New prop for permission gating
+      {/* Background Video */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute w-full h-full object-cover opacity-30"
+      >
+        <source src="/create_animated_video.mp4" type="video/mp4" />
+      </video>
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Content */}
+      <div className="relative z-10 text-center space-y-6">
+        <img
+          src="/britium-logo.png"
+          alt="Britium Logo"
+          className="mx-auto h-24"
+        />
+
+        <h1 className="text-4xl font-bold text-white tracking-wide">
+          BRITIUM ENTERPRISE PORTAL
+        </h1>
+
+        <Button
+          onClick={() => navigate("/dashboard")}
+          className="px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700"
+        >
+          Enter Enterprise Portal
+        </Button>
+      </div>
+    </div>
+  );
 }
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, requiredPermission, ...props }, ref) => {
-    // 1. Hook into the permission system
-    const { hasPermission } = useAuth()
-
-    // 2. Security Check: If permission is required but missing, do not render
-    if (requiredPermission && !hasPermission(requiredPermission)) {
-      return null
-    }
-
-    const Comp = asChild ? Slot : "button"
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Button.displayName = "Button"
-
-export { Button, buttonVariants }
