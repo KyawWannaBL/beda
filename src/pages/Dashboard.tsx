@@ -1,5 +1,4 @@
-// src/pages/Dashboard.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
@@ -8,195 +7,146 @@ type ProfileRow = {
   email: string | null;
   role: string | null;
   environment: string | null;
-  is_active: boolean | null;
   must_change_password: boolean | null;
-  branch_id: string | null;
+  is_active: boolean | null;
 };
 
-function isLegacyKeyDisabledError(msg: string) {
-  return msg.toLowerCase().includes("legacy api keys are disabled");
+function prettyError(e: unknown) {
+  const msg = (e as any)?.message ?? String(e);
+  return msg;
 }
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [error, setError] = useState<string>("");
 
-  const [email, setEmail] = useState<string>("");
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
-
-  const [counts, setCounts] = useState({
-    branches: 0,
-    permissions: 0,
-    role_permissions: 0,
-  });
+  const headline = useMemo(() => {
+    if (!profile?.role) return "Console";
+    return profile.role === "APP_OWNER" ? "System Operational" : "Dashboard";
+  }, [profile?.role]);
 
   useEffect(() => {
-    let alive = true;
+    let cancelled = false;
 
     (async () => {
       setLoading(true);
       setError("");
 
-      const { data: sessData, error: sessErr } = await supabase.auth.getSession();
-      if (sessErr) throw sessErr;
+      try {
+        const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+        if (sessionErr) throw sessionErr;
 
-      const session = sessData.session;
-      if (!session) {
-        navigate("/login", { replace: true });
-        return;
-      }
+        const session = sessionData.session;
+        if (!session?.user?.id) {
+          navigate("/login");
+          return;
+        }
 
-      const userId = session.user.id;
-      setEmail(session.user.email ?? "");
+        const userId = session.user.id;
 
-      const [profileRes, branchesRes, permsRes, rolePermsRes] = await Promise.all([
-        supabase
+        const { data, error: profErr } = await supabase
           .from("profiles")
-          .select(
-            "id,email,role,environment,is_active,must_change_password,branch_id",
-          )
+          .select("id,email,role,environment,must_change_password,is_active")
           .eq("id", userId)
-          .maybeSingle(),
-        supabase.from("branches").select("*", { count: "exact", head: true }),
-        supabase.from("permissions").select("*", { count: "exact", head: true }),
-        supabase
-          .from("role_permissions")
-          .select("*", { count: "exact", head: true }),
-      ]);
+          .maybeSingle();
 
-      if (profileRes.error) throw profileRes.error;
-      if (branchesRes.error) throw branchesRes.error;
-      if (permsRes.error) throw permsRes.error;
-      if (rolePermsRes.error) throw rolePermsRes.error;
+        if (profErr) throw profErr;
 
-      if (!alive) return;
+        if (!cancelled) {
+          setProfile((data as any) ?? null);
 
-      setProfile((profileRes.data as any) ?? null);
-      setCounts({
-        branches: branchesRes.count ?? 0,
-        permissions: permsRes.count ?? 0,
-        role_permissions: rolePermsRes.count ?? 0,
-      });
-    })()
-      .catch((e: any) => {
-        if (!alive) return;
-        setError(e?.message ?? String(e));
-      })
-      .finally(() => {
-        if (!alive) return;
-        setLoading(false);
-      });
+          // Force password reset flow
+          if ((data as any)?.must_change_password) {
+            navigate("/force-password-reset");
+            return;
+          }
+        }
+      } catch (e) {
+        const msg = prettyError(e);
+        if (!cancelled) {
+          setError(msg);
+
+          // If keys are broken, keep user on screen with error
+          // (don’t auto-redirect loop)
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [navigate]);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login", { replace: true });
-  };
+  const keyHint = useMemo(() => {
+    if (!error) return "";
+    if (error.toLowerCase().includes("legacy api keys are disabled")) {
+      return (
+        "Fix: Use sb_publishable_... in the frontend and sb_secret_... (SERVICE_ROLE_KEY) in Edge Functions, " +
+        "or re-enable legacy keys in Supabase settings."
+      );
+    }
+    return "";
+  }, [error]);
 
   return (
-    <div className="min-h-screen p-6 bg-black text-white">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-luxury-obsidian text-white">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="text-white/70 text-sm">{email}</p>
+            <h1 className="text-3xl font-bold">{headline}</h1>
+            <p className="mt-1 text-white/60">
+              {profile?.environment ? `Environment: ${profile.environment}` : "Environment: —"}
+            </p>
           </div>
+
           <button
-            onClick={logout}
-            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/login");
+            }}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
           >
             Logout
           </button>
         </div>
 
-        {loading && (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-            Loading…
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+        {error && (
+          <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
             <div className="font-semibold text-red-200">Error</div>
-            <div className="text-red-100 text-sm mt-1 break-words">{error}</div>
-
-            {isLegacyKeyDisabledError(error) && (
-              <div className="text-sm mt-3 text-red-100/90 space-y-2">
-                <div className="font-semibold">Fix:</div>
-                <ul className="list-disc ml-5 space-y-1">
-                  <li>
-                    Update your frontend env key to a <b>publishable</b> key
-                    (<code>sb_publishable_...</code>), or re-enable legacy keys in
-                    Supabase API settings.
-                  </li>
-                  <li>
-                    Never use <b>secret</b> keys (<code>sb_secret_...</code>) in the browser.
-                  </li>
-                </ul>
-              </div>
-            )}
+            <div className="mt-1 text-sm text-red-200/90">{error}</div>
+            {keyHint && <div className="mt-2 text-sm text-red-100/90">{keyHint}</div>}
           </div>
         )}
 
-        {!loading && !error && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Stat label="Branches" value={counts.branches} />
-              <Stat label="Permissions" value={counts.permissions} />
-              <Stat label="Role Permissions" value={counts.role_permissions} />
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <h2 className="text-lg font-semibold mb-3">My Profile</h2>
-
-              {!profile ? (
-                <div className="text-white/70 text-sm">
-                  No profile row found for this user id. (profiles.id should match auth.users.id)
+        <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
+          {loading ? (
+            <div className="text-white/70">Loading dashboard…</div>
+          ) : (
+            <>
+              <div className="text-white/70 text-sm">Signed-in profile</div>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                  <div className="text-xs text-white/60">Email</div>
+                  <div className="mt-1 font-medium">{profile?.email ?? "—"}</div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <Field k="role" v={profile.role} />
-                  <Field k="environment" v={profile.environment} />
-                  <Field k="is_active" v={String(profile.is_active)} />
-                  <Field k="must_change_password" v={String(profile.must_change_password)} />
-                  <Field k="branch_id" v={profile.branch_id} />
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                  <div className="text-xs text-white/60">Role</div>
+                  <div className="mt-1 font-medium">{profile?.role ?? "—"}</div>
                 </div>
-              )}
+              </div>
 
-              {counts.branches === 0 && (
-                <div className="mt-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
-                  Your <b>branches</b> table is empty. If your UI expects at least one branch,
-                  seed a default branch (or run your reset-accounts function with a “seed branch” step).
-                </div>
-              )}
-            </div>
-          </>
-        )}
+              <div className="mt-6 text-sm text-white/60">
+                If this page stays blank, open DevTools Console: any error there is usually an auth/key or RLS issue.
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="text-white/70 text-sm">{label}</div>
-      <div className="text-2xl font-semibold mt-1">{value}</div>
-    </div>
-  );
-}
-
-function Field({ k, v }: { k: string; v: string | null }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-      <div className="text-white/60 text-xs">{k}</div>
-      <div className="mt-1 break-words">{v ?? "-"}</div>
     </div>
   );
 }
