@@ -1,27 +1,26 @@
-export type AppRole = 
-  | "APP_OWNER"
-  | "SUPER_ADMIN"
-  | "OPERATIONS_ADMIN"
-  | "SUPERVISOR"
-  | "SUBSTATION_MANAGER"
-  | "WAREHOUSE_MANAGER"
-  | "DATA_ENTRY"
-  | "CUSTOMER_SERVICE"
-  | "FINANCE_STAFF"
-  | "FINANCE_USER"
-  | "HR_ADMIN"
-  | "MARKETING_ADMIN"
-  | "RIDER"
-  | "DRIVER"
-  | "HELPER"
-  | "STAFF"
-  | "MERCHANT"
-  | "CUSTOMER";
+export const APP_ROLES = [
+  'APP_OWNER',
+  'CUSTOMER',
+  'CUSTOMER_SERVICE',
+  'DATA_ENTRY',
+  'DRIVER',
+  'FINANCE_STAFF',
+  'FINANCE_USER',
+  'HELPER',
+  'HR_ADMIN',
+  'MARKETING_ADMIN',
+  'MERCHANT',
+  'OPERATIONS_ADMIN',
+  'RIDER',
+  'STAFF',
+  'SUBSTATION_MANAGER',
+  'SUPERVISOR',
+  'SUPER_ADMIN',
+  'WAREHOUSE_MANAGER',
+] as const
 
+export type AppRole = (typeof APP_ROLES)[number]
 
-export interface UserProfile {
-  user_id: string;
-  role: AppRole;
-  full_name: string;
-  substation_id?: string;
+export function isAppRole(value: unknown): value is AppRole {
+  return typeof value === 'string' && (APP_ROLES as readonly string[]).includes(value)
 }

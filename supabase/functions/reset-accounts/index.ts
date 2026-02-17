@@ -1,211 +1,230 @@
 /// <reference lib="deno.unstable" />
 
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
 type AccountInput = {
-  email: string;
-  role?: string;
-  environment?: string;
-  is_active?: boolean;
-  must_change_password?: boolean;
-  full_name?: string | null;
-};
+  email: string
+  role?: string // must match your app_role enum
+  environment?: string
+  is_active?: boolean
+  must_change_password?: boolean
+  branch_code?: string
+  full_name?: string
+}
 
 type RequestBody = {
-  // Either send secret in JSON body OR use x-admin-secret header
-  secret?: string;
+  // optional (header is preferred)
+  secret?: string
 
-  // If accounts is empty, we will try to read from seed_table
-  seed_table?: string; // default: "users_2026_02_11_14_10"
+  mode?: 'sync' | 'reset_passwords' | 'profiles_only'
+  default_role?: string
+  default_environment?: string
+  default_branch_code?: string
 
-  mode?: "sync" | "reset_passwords" | "profiles_only";
-  default_role?: string; // default: "STAFF"
-  default_environment?: string; // default: "PROD-ENTERPRISE"
-
-  accounts?: AccountInput[];
-  dry_run?: boolean;
-};
-
-function corsHeaders(origin = "*"): HeadersInit {
-  return {
-    "access-control-allow-origin": origin,
-    "access-control-allow-headers":
-      "authorization, x-client-info, apikey, content-type, x-admin-secret",
-    "access-control-allow-methods": "POST, OPTIONS",
-  };
+  accounts: AccountInput[]
+  dry_run?: boolean
 }
 
 function json(status: number, body: unknown, extraHeaders: HeadersInit = {}) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
     headers: {
-      "content-type": "application/json; charset=utf-8",
-      ...corsHeaders(),
+      'content-type': 'application/json; charset=utf-8',
       ...extraHeaders,
     },
-  });
+  })
+}
+
+function corsHeaders(origin = '*'): HeadersInit {
+  return {
+    'access-control-allow-origin': origin,
+    'access-control-allow-headers': 'authorization, x-client-info, apikey, content-type, x-admin-secret',
+    'access-control-allow-methods': 'POST, OPTIONS',
+  }
 }
 
 async function readJson<T>(req: Request): Promise<T> {
-  const text = await req.text();
-  if (!text) throw new Error("Missing JSON body");
-  return JSON.parse(text) as T;
+  const text = await req.text()
+  if (!text) throw new Error('Missing JSON body')
+  return JSON.parse(text) as T
 }
 
 function normEmail(email: string) {
-  return String(email || "").trim().toLowerCase();
+  return String(email || '').trim().toLowerCase()
+}
+
+async function ensureDefaultBranch(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  branchCode: string,
+) {
+  const { count, error: countErr } = await supabaseAdmin
+    .from('branches')
+    .select('*', { count: 'exact', head: true })
+
+  if (countErr) throw new Error(`branches count failed: ${countErr.message}`)
+  if ((count ?? 0) > 0) return
+
+  const code = (branchCode || 'HQ').trim()
+  const { error: insErr } = await supabaseAdmin.from('branches').insert({
+    name: 'Head Office',
+    code,
+    is_active: true,
+    environment: 'production',
+  })
+
+  if (insErr) throw new Error(`failed to seed default branch: ${insErr.message}`)
+}
+
+async function getBranchIdByCode(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  code: string | undefined,
+) {
+  if (!code) {
+    const { data, error } = await supabaseAdmin
+      .from('branches')
+      .select('id')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw new Error(`branch lookup failed: ${error.message}`)
+    return data?.id ?? null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('branches')
+    .select('id')
+    .eq('code', code)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(`branch lookup(${code}) failed: ${error.message}`)
+  return data?.id ?? null
 }
 
 async function findAuthUserByEmail(
   supabaseAdmin: ReturnType<typeof createClient>,
   email: string,
 ) {
-  const perPage = 1000;
-  for (let page = 1; page <= 10; page++) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
-      page,
-      perPage,
-    });
-    if (error) throw new Error(`listUsers failed: ${error.message}`);
+  // Supabase Admin API doesn’t provide getUserByEmail, so we page listUsers.
+  const perPage = 1000
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+    if (error) throw new Error(`listUsers failed: ${error.message}`)
 
-    const hit = data?.users?.find((u) =>
-      (u.email || "").toLowerCase() === email
-    );
-    if (hit) return hit;
+    const hit = data?.users?.find((u) => (u.email || '').toLowerCase() === email)
+    if (hit) return hit
 
-    if (!data?.users || data.users.length < perPage) break;
+    if (!data?.users || data.users.length < perPage) break
   }
-  return null;
+  return null
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders() });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders() })
   }
 
-  if (req.method !== "POST") {
-    return json(405, { error: "Method not allowed. Use POST." });
+  if (req.method !== 'POST') {
+    return json(405, { error: 'Method not allowed. Use POST.' }, corsHeaders())
   }
 
-  const SUPABASE_URL =
-    Deno.env.get("SUPABASE_URL") ??
-    Deno.env.get("PROJECT_URL") ??
-    "";
+  const RESET_SECRET = Deno.env.get('RESET_ADMIN_SECRET') ?? ''
+  const INITIAL_PASSWORD = Deno.env.get('INITIAL_PASSWORD') ?? ''
 
-  // IMPORTANT:
-  // - Put sb_secret_... in SERVICE_ROLE_KEY (recommended)
-  // - If you re-enable legacy keys, you can also use SUPABASE_SERVICE_ROLE_KEY (eyJ...)
-  const ADMIN_KEY =
-    Deno.env.get("SERVICE_ROLE_KEY") ??
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-    "";
+  // In Supabase Edge Functions, URL is typically provided.
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? Deno.env.get('PROJECT_URL') ?? ''
 
-  const RESET_SECRET = Deno.env.get("RESET_ADMIN_SECRET") ?? "";
-  const INITIAL_PASSWORD = Deno.env.get("INITIAL_PASSWORD") ?? "";
+  // IMPORTANT: Supabase CLI refuses secrets starting with SUPABASE_, so keep it as SERVICE_ROLE_KEY.
+  // If you DID add SUPABASE_SERVICE_ROLE_KEY, it may be skipped.
+  const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? ''
 
-  if (!SUPABASE_URL || !ADMIN_KEY || !RESET_SECRET) {
-    return json(500, {
-      error: "Missing required env vars",
-      missing: {
-        SUPABASE_URL_or_PROJECT_URL: !SUPABASE_URL,
-        SERVICE_ROLE_KEY_or_SUPABASE_SERVICE_ROLE_KEY: !ADMIN_KEY,
-        RESET_ADMIN_SECRET: !RESET_SECRET,
-        INITIAL_PASSWORD_optional: !INITIAL_PASSWORD,
+  if (!RESET_SECRET || !SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return json(
+      500,
+      {
+        error: 'Missing env. Require RESET_ADMIN_SECRET, SUPABASE_URL (or PROJECT_URL), SERVICE_ROLE_KEY.',
+        missing: {
+          RESET_ADMIN_SECRET: !RESET_SECRET,
+          SUPABASE_URL_or_PROJECT_URL: !SUPABASE_URL,
+          SERVICE_ROLE_KEY: !SERVICE_ROLE_KEY,
+          INITIAL_PASSWORD_optional: !INITIAL_PASSWORD,
+        },
       },
-    });
+      corsHeaders(),
+    )
   }
 
-  const supabaseAdmin = createClient(SUPABASE_URL, ADMIN_KEY, {
+  const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "X-Client-Info": "reset-accounts/2.0" } },
-  });
+    global: { headers: { 'X-Client-Info': 'reset-accounts/2.0' } },
+  })
 
   try {
-    const body = await readJson<RequestBody>(req);
+    const body = await readJson<RequestBody>(req)
 
-    const headerSecret = req.headers.get("x-admin-secret") ?? "";
-    const bodySecret = body.secret ?? "";
-    const provided = headerSecret || bodySecret;
+    // Security: header is preferred; body.secret supported for convenience.
+    const providedHeader = req.headers.get('x-admin-secret') ?? ''
+    const providedBody = body?.secret ?? ''
+    const provided = providedHeader || providedBody
 
     if (!provided || provided !== RESET_SECRET) {
-      return json(403, { error: "Forbidden: Invalid admin secret" });
+      return json(403, { error: 'Forbidden: Invalid admin secret' }, corsHeaders())
     }
 
-    const dryRun = Boolean(body.dry_run);
-    const mode = body.mode ?? "sync";
-    const defaultRole = (body.default_role ?? "STAFF").trim();
-    const defaultEnv = (body.default_environment ?? "PROD-ENTERPRISE").trim();
+    const dryRun = Boolean(body.dry_run)
+    const mode = body.mode ?? 'sync'
 
-    let accounts: AccountInput[] = Array.isArray(body.accounts) ? body.accounts : [];
+    const defaultRole = (body.default_role ?? 'STAFF').trim()
+    const defaultEnv = (body.default_environment ?? 'PROD-ENTERPRISE').trim()
+    const defaultBranchCode = (body.default_branch_code ?? 'HQ').trim()
 
-    // If accounts not provided, try seed table
+    const accounts = Array.isArray(body.accounts) ? body.accounts : []
     if (accounts.length === 0) {
-      const seedTable = (body.seed_table ?? "users_2026_02_11_14_10").trim();
-
-      const { data: seed, error: seedErr } = await supabaseAdmin
-        .from(seedTable)
-        .select("email, role, full_name, is_active")
-        .eq("is_active", true);
-
-      if (seedErr) {
-        // Common when table name is wrong or not in schema cache
-        return json(500, {
-          error: `Seed data lookup failed: ${seedErr.message}`,
-          hint:
-            "Either pass accounts[] in the request OR set seed_table to an existing table name.",
-        });
-      }
-
-      accounts = (seed ?? []).map((u: any) => ({
-        email: u.email,
-        role: u.role,
-        full_name: u.full_name ?? null,
-        is_active: true,
-      }));
-
-      if (accounts.length === 0) {
-        return json(200, {
-          dry_run: dryRun,
-          mode,
-          deleted: 0,
-          created: 0,
-          note: "Seed table returned 0 active users. Provide accounts[] or insert seed rows.",
-        });
-      }
+      return json(400, { error: 'accounts[] is required' }, corsHeaders())
     }
 
-    const results: any[] = [];
-    let ok = 0;
-    let failed = 0;
+    // Seed a branch row if branches table is empty (common cause of dashboard showing 0)
+    if (!dryRun) {
+      await ensureDefaultBranch(supabaseAdmin, defaultBranchCode)
+    }
+
+    const results: any[] = []
+    let ok = 0
+    let failed = 0
 
     for (const a of accounts) {
-      const email = normEmail(a.email);
-      if (!email || !email.includes("@")) {
-        failed++;
-        results.push({ email: a.email, status: "error", error: "Invalid email" });
-        continue;
+      const email = normEmail(a.email)
+      if (!email || !email.includes('@')) {
+        failed++
+        results.push({ email: a.email, status: 'error', error: 'Invalid email' })
+        continue
       }
 
-      const role = (a.role ?? defaultRole).trim();
-      const environment = (a.environment ?? defaultEnv).trim();
-      const is_active = a.is_active ?? true;
-
-      // For reset flows, you usually want this TRUE
-      const must_change_password =
-        a.must_change_password ?? (mode === "reset_passwords" ? true : false);
+      const role = (a.role ?? defaultRole).trim()
+      const environment = (a.environment ?? defaultEnv).trim()
+      const is_active = a.is_active ?? true
+      const must_change_password = a.must_change_password ?? false
 
       try {
-        let authUser = await findAuthUserByEmail(supabaseAdmin, email);
-        let authAction: "created" | "updated" | "unchanged" = "unchanged";
+        const branchId = dryRun
+          ? null
+          : await getBranchIdByCode(supabaseAdmin, a.branch_code ?? defaultBranchCode)
 
-        // Create auth user if missing (unless profiles_only)
-        if (!authUser && mode !== "profiles_only") {
-          if (!INITIAL_PASSWORD && mode !== "sync") {
-            throw new Error("INITIAL_PASSWORD is required for creating users");
+        // 1) Ensure Auth user exists
+        let authUser = await findAuthUserByEmail(supabaseAdmin, email)
+        let authAction: 'created' | 'updated' | 'unchanged' = 'unchanged'
+
+        if (!authUser && mode !== 'profiles_only') {
+          if (!INITIAL_PASSWORD && (mode === 'reset_passwords' || must_change_password)) {
+            throw new Error('INITIAL_PASSWORD is empty; cannot create/reset passwords')
           }
 
-          if (!dryRun) {
+          if (dryRun) {
+            authAction = 'created'
+            authUser = { id: 'DRY_RUN' } as any
+          } else {
             const { data, error } = await supabaseAdmin.auth.admin.createUser({
               email,
               password: INITIAL_PASSWORD || undefined,
@@ -215,86 +234,86 @@ serve(async (req) => {
                 full_name: a.full_name ?? null,
                 must_change_password,
               },
-            });
-            if (error) throw error;
-            authUser = data.user;
+            })
+            if (error) throw error
+            authUser = data.user
+            authAction = 'created'
+          }
+        }
+
+        if (authUser && mode === 'reset_passwords') {
+          if (!INITIAL_PASSWORD) {
+            throw new Error('INITIAL_PASSWORD is empty; cannot reset_passwords')
+          }
+
+          if (dryRun) {
+            authAction = authAction === 'created' ? 'created' : 'updated'
           } else {
-            authUser = { id: "DRY_RUN" } as any;
-          }
-          authAction = "created";
-        }
-
-        // Reset password if requested
-        if (authUser && mode === "reset_passwords") {
-          if (!INITIAL_PASSWORD) throw new Error("INITIAL_PASSWORD is empty");
-
-          if (!dryRun) {
-            const { error } = await supabaseAdmin.auth.admin.updateUserById(
-              authUser.id,
-              {
-                password: INITIAL_PASSWORD,
-                email_confirm: true,
-                user_metadata: {
-                  role,
-                  full_name: a.full_name ?? null,
-                  must_change_password: true,
-                },
+            const { error } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+              password: INITIAL_PASSWORD,
+              email_confirm: true,
+              user_metadata: {
+                role,
+                full_name: a.full_name ?? null,
+                must_change_password: true,
               },
-            );
-            if (error) throw error;
+            })
+            if (error) throw error
+            authAction = authAction === 'created' ? 'created' : 'updated'
           }
-          authAction = authAction === "created" ? "created" : "updated";
         }
 
-        if (!authUser?.id) throw new Error("Auth user missing; cannot upsert profile");
-
-        // Upsert profile. Keep payload STRICT to columns you’re sure exist.
-        const profilePayload: Record<string, unknown> = {
-          id: authUser.id,
-          email,
-          role,
-          environment,
-          is_active,
-          must_change_password,
-        };
-
-        // Only include full_name if your profiles table has it (comment out if not)
-        if (a.full_name !== undefined) profilePayload.full_name = a.full_name;
-
-        if (!dryRun) {
-          const { error: upsertErr } = await supabaseAdmin
-            .from("profiles")
-            .upsert(profilePayload, { onConflict: "id" });
-
-          if (upsertErr) throw upsertErr;
+        // 2) Upsert profile (id must match auth.users.id)
+        if (!authUser?.id) {
+          throw new Error('Auth user missing (cannot upsert profile)')
         }
 
-        ok++;
+        if (!dryRun && authUser.id !== 'DRY_RUN') {
+          const { error: upsertErr } = await supabaseAdmin.from('profiles').upsert(
+            {
+              id: authUser.id,
+              email,
+              role,
+              environment,
+              is_active,
+              must_change_password,
+              full_name: a.full_name ?? null,
+              branch_id: branchId,
+            },
+            { onConflict: 'id' },
+          )
+          if (upsertErr) throw upsertErr
+        }
+
+        ok++
         results.push({
           email,
-          status: "ok",
+          status: 'ok',
           auth: authAction,
-          profile: dryRun ? "upsert(dry_run)" : "upserted",
+          profile: dryRun ? 'upsert(dry_run)' : 'upserted',
           role,
           environment,
           is_active,
           must_change_password,
-        });
+          branch_id: branchId,
+        })
       } catch (e: any) {
-        failed++;
-        results.push({ email, status: "error", error: e?.message ?? String(e) });
+        failed++
+        results.push({ email, status: 'error', error: e?.message ?? String(e) })
       }
     }
 
-    return json(200, {
-      dry_run: dryRun,
-      mode,
-      summary: { ok, failed, total: accounts.length },
-      results,
-      note:
-        "If you still see 'Legacy API keys are disabled', switch ADMIN_KEY to sb_secret_... or re-enable legacy keys in Supabase.",
-    });
+    return json(
+      200,
+      {
+        dry_run: dryRun,
+        mode,
+        summary: { ok, failed, total: accounts.length },
+        results,
+      },
+      corsHeaders(),
+    )
   } catch (e: any) {
-    return json(500, { error: e?.message ?? String(e) });
+    return json(500, { error: e?.message ?? String(e) }, corsHeaders())
   }
-});
+})

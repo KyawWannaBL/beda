@@ -1,172 +1,73 @@
-import React, { useState, useMemo } from 'react';
-import { NavLink } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
-import { enterpriseNav } from '@/config/navigation';
-import { LogOut, Menu, User, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import NotificationBell from './NotificationBell';
+import React from 'react'
+import { NavLink, Outlet } from 'react-router-dom'
+import { LogOut } from 'lucide-react'
 
-const ROUTE_PERMISSIONS: Record<string, string> = {
-  '/dashboard': 'dashboard.view',
-  '/admin/users': 'users.manage',
-  '/inventory': 'inventory.view',
-  '/reports': 'reports.view',
-  '/settings': 'settings.manage'
-};
+import { useAuth } from '@/hooks/useAuth'
+import { navForRole } from '@/config/navigation'
+import type { AppRole } from '@/types/roles'
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, role, logout, hasPermission } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  /**
-   * Consolidated Navigation Filtering
-   * Safety Guard: Prevents Array.filter from running on undefined auth state.
-   */
-  const filteredNav = useMemo(() => {
-    // If auth data hasn't arrived yet, return empty to prevent 'i is not a function' crash.
-    if (!user || !role) return [];
-
-    return enterpriseNav.filter(item => {
-      // 1. Check Feature Flags from Environment
-      const isFlagEnabled = item.featureFlag 
-        ? import.meta.env[item.featureFlag] === 'true' 
-        : true;
-
-      if (!isFlagEnabled) return false;
-
-      // 2. Role-Based Access Control (RBAC)
-      // Allows access if user has the role OR is the master APP_OWNER.
-      if (item.roles && !item.roles.includes(role as any) && role !== 'APP_OWNER') {
-        return false;
-      }
-
-      // 3. Permission-Based Access Control
-      const requiredPermission = ROUTE_PERMISSIONS[item.href];
-      if (requiredPermission) {
-        return typeof hasPermission === 'function' ? hasPermission(requiredPermission) : false;
-      }
-
-      return true;
-    });
-  }, [user, role, hasPermission]);
+export default function Layout() {
+  const { role, logout } = useAuth()
+  const navItems = navForRole((role as AppRole) ?? null)
 
   return (
-    <div className="flex h-screen bg-luxury-obsidian text-luxury-cream overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar Navigation */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 luxury-glass border-r border-white/5 transition-transform duration-300 md:relative md:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="p-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-luxury-gold to-amber-600 flex items-center justify-center shadow-lg shadow-luxury-gold/20">
-              <span className="text-luxury-obsidian font-black text-xl">B</span>
-            </div>
-            <div>
-              <h1 className="font-bold tracking-tighter text-xl text-luxury-gold">BRITIUM</h1>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Logistics Cloud</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-72 border-r border-white/10 bg-white/5 backdrop-blur">
+          <div className="p-5">
+            <div className="text-lg font-semibold">Britium Express</div>
+            <div className="text-xs text-white/60">Enterprise Portal</div>
           </div>
 
-          <nav className="space-y-2">
-            {filteredNav.map((item) => (
-              <NavLink
-                key={item.href}
-                to={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
-                  isActive 
-                    ? "bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20" 
-                    : "text-white/50 hover:text-white hover:bg-white/5"
-                )}
-              >
-                <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
-                <span className="font-medium text-sm">{item.title}</span>
-              </NavLink>
-            ))}
-
-            {/* APP_OWNER Exclusive User Management Link */}
-            {role === "APP_OWNER" && (
-              <NavLink
-                to="/admin/users"
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
-                  isActive 
-                    ? "bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20" 
-                    : "text-white/50 hover:text-white hover:bg-white/5"
-                )}
-              >
-                <Users className="h-5 w-5 transition-transform group-hover:scale-110" />
-                <span className="font-medium text-sm">User Management</span>
-              </NavLink>
-            )}
+          <nav className="px-3 pb-6">
+            <div className="space-y-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ` +
+                    (isActive
+                      ? 'bg-white/15 text-white'
+                      : 'text-white/70 hover:bg-white/10 hover:text-white')
+                  }
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.name}</span>
+                </NavLink>
+              ))}
+            </div>
           </nav>
-        </div>
 
-        {/* User Profile / Logout Section */}
-        <div className="absolute bottom-0 w-full p-6 border-t border-white/5">
-          <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
-              <User className="h-4 w-4 text-luxury-gold" />
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold truncate">{user?.full_name || 'User'}</p>
-              <p className="text-[10px] text-white/40 truncate">{role || 'Guest'}</p>
-            </div>
+          <div className="mt-auto p-4">
+            <button
+              onClick={logout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
           </div>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-400/10"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4 mr-3" />
-            Logout
-          </Button>
-        </div>
-      </aside>
+        </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-20 luxury-glass border-b border-white/5 flex items-center justify-between px-8 z-30">
-          <button className="md:hidden p-2 text-white" onClick={() => setSidebarOpen(true)}>
-            <Menu className="h-6 w-6" />
-          </button>
-
-          <div className="hidden md:block">
-            <h2 className="text-sm font-medium text-white/60">System Operational</h2>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <NotificationBell />
-            <div className="h-8 w-[1px] bg-white/10 mx-2" />
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] text-white/40 uppercase">Environment</p>
-              <p className="text-xs font-mono text-luxury-gold">PROD-ENTERPRISE</p>
+        {/* Main */}
+        <main className="flex-1">
+          <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/40 backdrop-blur">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div>
+                <div className="text-sm text-white/60">Role</div>
+                <div className="text-base font-semibold">{role ?? '—'}</div>
+              </div>
+              <div className="text-xs text-white/50">v0.1</div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <main className="flex-1 overflow-y-auto p-8 relative custom-scrollbar">
-          {children}
+          <div className="p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
-  );
+  )
 }

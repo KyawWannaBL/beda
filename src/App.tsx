@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom'
+
 import {
   EnterprisePortal,
   Login,
   Dashboard,
-  AdminDashboard, 
+  AdminDashboard,
   Operations,
   Finance,
   HumanResources,
@@ -16,29 +17,30 @@ import {
   Reports,
   Unauthorized,
   ForcePasswordReset,
-  ChangePassword
-} from './pages';
-import Layout from './components/Layout';
-import RoleBasedRoute from './components/RoleBasedRoute';
-import { useAuth } from './hooks/useAuth';
+  ChangePassword,
+} from './pages'
+
+import Layout from './components/Layout'
+import RoleBasedRoute from './components/RoleBasedRoute'
+import { useAuth } from './hooks/useAuth'
 
 /**
  * Main Application Component
  * Handles global routing, authentication state, and role-based access control.
  */
 function App() {
-  const { loading } = useAuth();
+  const { loading } = useAuth()
 
-  // Show a centralized loading state while checking Supabase session
+  // Centralized loading state while checking Supabase session
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-900">
         <div className="relative h-16 w-16">
-          <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20"></div>
-          <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -53,7 +55,6 @@ function App() {
 
       {/* --- Private Enterprise Routes (Requires Auth & Layout) --- */}
       <Route element={<Layout />}>
-        
         {/* General Dashboard (Base access) */}
         <Route
           path="/dashboard"
@@ -73,12 +74,20 @@ function App() {
             </RoleBasedRoute>
           }
         />
-        
+
         {/* Logistics & Supply Chain */}
         <Route
           path="/operations"
           element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'OPERATIONS_STAFF']}>
+            <RoleBasedRoute
+              allowedRoles={[
+                'SUPER_ADMIN',
+                'OPERATIONS_ADMIN',
+                'SUPERVISOR',
+                'WAREHOUSE_MANAGER',
+                'SUBSTATION_MANAGER',
+              ]}
+            >
               <Operations />
             </RoleBasedRoute>
           }
@@ -87,26 +96,26 @@ function App() {
         <Route
           path="/substation"
           element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'SUBSTATION_MANAGER']}>
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'SUBSTATION_MANAGER', 'SUPERVISOR', 'OPERATIONS_ADMIN']}>
               <Substation />
             </RoleBasedRoute>
           }
         />
-        
+
         {/* Revenue & Growth */}
         <Route
           path="/finance"
           element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'FINANCE_ADMIN', 'FINANCE_STAFF', 'FINANCE_USER']}>
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'FINANCE_STAFF', 'FINANCE_USER']}>
               <Finance />
             </RoleBasedRoute>
           }
         />
-        
+
         <Route
           path="/marketing"
           element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'MARKETING_ADMIN', 'MARKETING']}>
+            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'MARKETING_ADMIN']}>
               <Marketing />
             </RoleBasedRoute>
           }
@@ -140,29 +149,34 @@ function App() {
           }
         />
 
+        {/* Settings & Governance */}
         <Route
-          path="/admin/settings"
+          path="/settings"
           element={
             <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
               <SystemSettings />
             </RoleBasedRoute>
           }
         />
+        <Route path="/admin/settings" element={<Navigate to="/settings" replace />} />
 
         <Route
-          path="/admin/audit"
+          path="/audit"
           element={
             <RoleBasedRoute allowedRoles={['SUPER_ADMIN']}>
               <AuditLogs />
             </RoleBasedRoute>
           }
         />
+        <Route path="/admin/audit" element={<Navigate to="/audit" replace />} />
 
         {/* Data & Analytics */}
         <Route
           path="/reports"
           element={
-            <RoleBasedRoute allowedRoles={['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'FINANCE_ADMIN']}>
+            <RoleBasedRoute
+              allowedRoles={['SUPER_ADMIN', 'OPERATIONS_ADMIN', 'SUPERVISOR', 'FINANCE_STAFF', 'FINANCE_USER']}
+            >
               <Reports />
             </RoleBasedRoute>
           }
@@ -172,7 +186,7 @@ function App() {
       {/* --- Fallback Route --- */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
-  );
+  )
 }
 
-export default App;
+export default App
