@@ -1,162 +1,202 @@
+// src/pages/Dashboard.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
-type Profile = {
+type ProfileRow = {
   id: string;
   email: string | null;
   role: string | null;
   environment: string | null;
   is_active: boolean | null;
   must_change_password: boolean | null;
-  full_name?: string | null;
-  branch_id?: string | null;
+  branch_id: string | null;
 };
+
+function isLegacyKeyDisabledError(msg: string) {
+  return msg.toLowerCase().includes("legacy api keys are disabled");
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const [email, setEmail] = useState<string>("");
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
+
+  const [counts, setCounts] = useState({
+    branches: 0,
+    permissions: 0,
+    role_permissions: 0,
+  });
 
   useEffect(() => {
-    let cancelled = false;
+    let alive = true;
 
     (async () => {
       setLoading(true);
       setError("");
 
-      const { data, error: sessionErr } = await supabase.auth.getSession();
-      if (sessionErr) {
-        if (!cancelled) setError(sessionErr.message);
-        if (!cancelled) setLoading(false);
-        return;
-      }
+      const { data: sessData, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr) throw sessErr;
 
-      const user = data.session?.user;
-      if (!user) {
+      const session = sessData.session;
+      if (!session) {
         navigate("/login", { replace: true });
         return;
       }
 
-      // If you want forced reset behavior:
-      // (You can remove this block if not needed)
-      // We'll still fetch profile first, because your must_change_password is stored in profiles.
+      const userId = session.user.id;
+      setEmail(session.user.email ?? "");
 
-      setLoading(false);
-      setProfileLoading(true);
+      const [profileRes, branchesRes, permsRes, rolePermsRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select(
+            "id,email,role,environment,is_active,must_change_password,branch_id",
+          )
+          .eq("id", userId)
+          .maybeSingle(),
+        supabase.from("branches").select("*", { count: "exact", head: true }),
+        supabase.from("permissions").select("*", { count: "exact", head: true }),
+        supabase
+          .from("role_permissions")
+          .select("*", { count: "exact", head: true }),
+      ]);
 
-      const { data: p, error: pErr } = await supabase
-        .from("profiles")
-        .select("id,email,role,environment,is_active,must_change_password,full_name,branch_id")
-        .eq("id", user.id)
-        .maybeSingle();
+      if (profileRes.error) throw profileRes.error;
+      if (branchesRes.error) throw branchesRes.error;
+      if (permsRes.error) throw permsRes.error;
+      if (rolePermsRes.error) throw rolePermsRes.error;
 
-      if (cancelled) return;
+      if (!alive) return;
 
-      if (pErr) {
-        // Common: 42P17 infinite recursion detected in policy for relation "profiles"
-        setError(
-          `Profile load failed: ${pErr.message}${
-            (pErr as any).code ? ` (code ${(pErr as any).code})` : ""
-          }`
-        );
-        setProfile(null);
-      } else {
-        setProfile(p as any);
-
-        if (p?.must_change_password) {
-          navigate("/force-password-reset", { replace: true });
-          return;
-        }
-      }
-
-      setProfileLoading(false);
-    })();
+      setProfile((profileRes.data as any) ?? null);
+      setCounts({
+        branches: branchesRes.count ?? 0,
+        permissions: permsRes.count ?? 0,
+        role_permissions: rolePermsRes.count ?? 0,
+      });
+    })()
+      .catch((e: any) => {
+        if (!alive) return;
+        setError(e?.message ?? String(e));
+      })
+      .finally(() => {
+        if (!alive) return;
+        setLoading(false);
+      });
 
     return () => {
-      cancelled = true;
+      alive = false;
     };
   }, [navigate]);
 
-  const handleLogout = async () => {
+  const logout = async () => {
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="opacity-80">Loading session…</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-5xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen p-6 bg-black text-white">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="opacity-70 text-sm">System Operational · PROD-ENTERPRISE</p>
+            <p className="text-white/70 text-sm">{email}</p>
           </div>
           <button
-            onClick={handleLogout}
-            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10"
+            onClick={logout}
+            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20"
           >
             Logout
           </button>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
-            <div className="font-semibold mb-1">Error</div>
-            <div className="text-sm opacity-90 whitespace-pre-wrap">{error}</div>
-
-            <div className="mt-3 text-sm opacity-80">
-              If you see recursion/policy errors for <code>profiles</code>, fix your RLS policies
-              (don’t query <code>profiles</code> from inside a <code>profiles</code> policy).
-            </div>
+        {loading && (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+            Loading…
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <div className="font-semibold mb-3">Profile</div>
+        {!loading && error && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+            <div className="font-semibold text-red-200">Error</div>
+            <div className="text-red-100 text-sm mt-1 break-words">{error}</div>
 
-          {profileLoading ? (
-            <div className="opacity-80">Loading profile…</div>
-          ) : profile ? (
-            <div className="text-sm space-y-2">
-              <div>
-                <span className="opacity-70">Email:</span> {profile.email ?? "—"}
+            {isLegacyKeyDisabledError(error) && (
+              <div className="text-sm mt-3 text-red-100/90 space-y-2">
+                <div className="font-semibold">Fix:</div>
+                <ul className="list-disc ml-5 space-y-1">
+                  <li>
+                    Update your frontend env key to a <b>publishable</b> key
+                    (<code>sb_publishable_...</code>), or re-enable legacy keys in
+                    Supabase API settings.
+                  </li>
+                  <li>
+                    Never use <b>secret</b> keys (<code>sb_secret_...</code>) in the browser.
+                  </li>
+                </ul>
               </div>
-              <div>
-                <span className="opacity-70">Role:</span> {profile.role ?? "—"}
-              </div>
-              <div>
-                <span className="opacity-70">Environment:</span> {profile.environment ?? "—"}
-              </div>
-              <div>
-                <span className="opacity-70">Active:</span>{" "}
-                {String(profile.is_active ?? false)}
-              </div>
-              <div>
-                <span className="opacity-70">Must change password:</span>{" "}
-                {String(profile.must_change_password ?? false)}
-              </div>
-              <div>
-                <span className="opacity-70">Branch:</span> {profile.branch_id ?? "—"}
-              </div>
+            )}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Stat label="Branches" value={counts.branches} />
+              <Stat label="Permissions" value={counts.permissions} />
+              <Stat label="Role Permissions" value={counts.role_permissions} />
             </div>
-          ) : (
-            <div className="opacity-80">
-              No profile row found for this user (or blocked by RLS).
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <h2 className="text-lg font-semibold mb-3">My Profile</h2>
+
+              {!profile ? (
+                <div className="text-white/70 text-sm">
+                  No profile row found for this user id. (profiles.id should match auth.users.id)
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <Field k="role" v={profile.role} />
+                  <Field k="environment" v={profile.environment} />
+                  <Field k="is_active" v={String(profile.is_active)} />
+                  <Field k="must_change_password" v={String(profile.must_change_password)} />
+                  <Field k="branch_id" v={profile.branch_id} />
+                </div>
+              )}
+
+              {counts.branches === 0 && (
+                <div className="mt-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
+                  Your <b>branches</b> table is empty. If your UI expects at least one branch,
+                  seed a default branch (or run your reset-accounts function with a “seed branch” step).
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="text-white/70 text-sm">{label}</div>
+      <div className="text-2xl font-semibold mt-1">{value}</div>
+    </div>
+  );
+}
+
+function Field({ k, v }: { k: string; v: string | null }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+      <div className="text-white/60 text-xs">{k}</div>
+      <div className="mt-1 break-words">{v ?? "-"}</div>
     </div>
   );
 }
